@@ -1,0 +1,55 @@
+[
+    {
+        "protocol": "Gopher",
+        "port": 70,
+        "description": "Gopher protocol",
+        "probe": "\r\n",
+        "match": {
+            "contains": [
+                "i",
+                "1",
+                "0"
+            ],
+            "regex": "^[01i].*\\t.*\\t.*\\t.*"
+        }
+    },
+    {
+        "protocol": "Finger",
+        "port": 79,
+        "description": "Finger user information protocol",
+        "probe": "\r\n",
+        "match": {
+            "contains": [
+                "Login",
+                "Name",
+                "Tty"
+            ],
+            "regex": "Login.*Name.*Tty"
+        }
+    },
+    {
+        "protocol": "WAIS",
+        "port": 210,
+        "description": "Wide Area Information Server",
+        "probe": "WAIS_INIT 1.0\r\n",
+        "match": {
+            "contains": [
+                "WAIS_OK"
+            ],
+            "regex": "^WAIS_OK"
+        }
+    },
+    {
+        "protocol": "Archie",
+        "port": 1525,
+        "description": "Archie FTP search",
+        "probe": "help\n",
+        "match": {
+            "contains": [
+                "archie>",
+                "Archie Server"
+            ],
+            "regex": "Archie"
+        }
+    }
+]

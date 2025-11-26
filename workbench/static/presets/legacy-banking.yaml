@@ -1,0 +1,30 @@
+protocol:
+  name: "Legacy Banking"
+  description: "Fixed-width COBOL-style mainframe protocol"
+  port: 7070
+  format: text
+
+connection:
+  type: TCP
+  timeout: 30000
+
+messageTypes:
+  - name: AccountQuery
+    format: "QRY{account_number:10}{account_type:4}\n"
+    direction: request
+    fields:
+      - name: account_number
+        type: string
+      - name: account_type
+        type: string
+
+  - name: AccountResponse  
+    format: "RSP{account_number:10}{balance:15}{status:5}\n"
+    direction: response
+    fields:
+      - name: account_number
+        type: string
+      - name: balance
+        type: string
+      - name: status
+        type: string

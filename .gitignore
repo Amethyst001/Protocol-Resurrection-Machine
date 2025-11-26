@@ -1,0 +1,12 @@
+node_modules/
+dist/
+coverage/
+*.log
+.DS_Store
+.env
+.env.local
+generated/
+validation-errors.json
+.kiro/
+test_cargo/
+test_cargo_new/

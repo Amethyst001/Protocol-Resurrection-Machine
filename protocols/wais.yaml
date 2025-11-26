@@ -1,0 +1,68 @@
+protocol:
+  name: WAIS
+  version: 1.0.0
+  description: Wide Area Information Server protocol (Z39.50-based) for searching distributed databases.
+  port: 210
+
+connection:
+  type: TCP
+
+
+
+messageTypes:
+  - name: InitRequest
+    direction: request
+    format: "WAIS_INIT {version} {options}"
+    fields:
+      - name: version
+        type: string
+        required: true
+        description: Protocol version
+      - name: options
+        type: string
+        required: false
+        description: Initialization options
+
+  - name: InitResponse
+    direction: response
+    format: "WAIS_OK {sessionId} {chunkSize}"
+    fields:
+      - name: sessionId
+        type: string
+        required: true
+        description: Assigned session ID
+      - name: chunkSize
+        type: number
+        required: true
+        description: Negotiated chunk size
+
+  - name: SearchRequest
+    direction: request
+    format: "SEARCH {database} {query}"
+    fields:
+      - name: database
+        type: string
+        required: true
+        description: Target database name
+      - name: query
+        type: string
+        required: true
+        description: Search query terms
+
+  - name: SearchResponse
+    direction: response
+    format: "RESULTS {count} {hits}"
+    fields:
+      - name: count
+        type: number
+        required: true
+        description: Number of hits found
+      - name: hits
+        type: string
+        required: true
+        description: Serialized hit list
+
+errorHandling:
+  onNetworkError: retry
+  retryAttempts: 3
+  retryDelay: 1000

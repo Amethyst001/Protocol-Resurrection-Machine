@@ -1,0 +1,257 @@
+<script lang="ts">
+  import { onMount } from 'svelte';
+
+  export let code: {
+    typescript?: string;
+    python?: string;
+    go?: string;
+    rust?: string;
+  } = {};
+  export let selectedLanguage: 'typescript' | 'python' | 'go' | 'rust' = 'typescript';
+
+  type Language = 'typescript' | 'python' | 'go' | 'rust';
+
+  const languages: { id: Language; name: string; ext: string }[] = [
+    { id: 'typescript', name: 'TypeScript', ext: 'ts' },
+    { id: 'python', name: 'Python', ext: 'py' },
+    { id: 'go', name: 'Go', ext: 'go' },
+    { id: 'rust', name: 'Rust', ext: 'rs' },
+  ];
+
+  function copyToClipboard() {
+    const currentCode = code[selectedLanguage];
+    if (currentCode) {
+      navigator.clipboard.writeText(currentCode).then(() => {
+        alert('Code copied to clipboard!');
+      });
+    }
+  }
+
+  function highlightCode(text: string, lang: Language): string {
+    if (!text) return '';
+
+    text = text.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
+
+    const keywords: Record<Language, string[]> = {
+      typescript: [
+        'function',
+        'const',
+        'let',
+        'var',
+        'class',
+        'interface',
+        'type',
+        'export',
+        'import',
+        'return',
+        'if',
+        'else',
+        'for',
+        'while',
+      ],
+      python: [
+        'def',
+        'class',
+        'import',
+        'from',
+        'return',
+        'if',
+        'else',
+        'elif',
+        'for',
+        'while',
+        'try',
+        'except',
+      ],
+      go: [
+        'func',
+        'type',
+        'struct',
+        'interface',
+        'package',
+        'import',
+        'return',
+        'if',
+        'else',
+        'for',
+        'range',
+      ],
+      rust: [
+        'fn',
+        'struct',
+        'enum',
+        'impl',
+        'trait',
+        'use',
+        'pub',
+        'return',
+        'if',
+        'else',
+        'for',
+        'while',
+        'match',
+      ],
+    };
+
+    const langKeywords = keywords[lang] || [];
+    langKeywords.forEach((keyword) => {
+      const regex = new RegExp(`\\b(${keyword})\\b`, 'g');
+      text = text.replace(
+        regex,
+        '<span class="text-purple-600 dark:text-purple-400 font-semibold">$1</span>'
+      );
+    });
+
+    text = text.replace(
+      /"([^"]*)"/g,
+      '<span class="text-green-600 dark:text-green-400">"$1"</span>'
+    );
+    text = text.replace(
+      /'([^']*)'/g,
+      '<span class="text-green-600 dark:text-green-400">\'$1\'</span>'
+    );
+    text = text.replace(
+      /\b(\d+\.?\d*)\b/g,
+      '<span class="text-orange-600 dark:text-orange-400">$1</span>'
+    );
+    text = text.replace(
+      /\/\/(.*?)$/gm,
+      '<span class="text-gray-500 dark:text-gray-500 italic">//$1</span>'
+    );
+    text = text.replace(
+      /#(.*?)$/gm,
+      '<span class="text-gray-500 dark:text-gray-500 italic">#$1</span>'
+    );
+    text = text.replace(
+      /\b([A-Z][a-zA-Z0-9]*)\b/g,
+      '<span class="text-blue-600 dark:text-blue-400">$1</span>'
+    );
+
+    return text;
+  }
+
+  $: currentCode = code[selectedLanguage] || '';
+  $: highlightedCode = highlightCode(currentCode, selectedLanguage);
+  $: hasCode = Object.values(code).some((c) => c && c.length > 0);
+</script>
+
+<div class="code-viewer-container flex flex-col h-full bg-white dark:bg-slate-900">
+  <!-- Language tabs - Compact style -->
+  <div
+    class="flex items-center gap-1 px-4 py-2 border-b border-gray-200 dark:border-gray-700 bg-gray-50/50 dark:bg-slate-800/50 overflow-x-auto flex-nowrap"
+  >
+    {#each languages as lang}
+      <button
+        onclick={() => (selectedLanguage = lang.id)}
+        class="px-3 py-1.5 text-xs font-medium rounded-md transition-all duration-200 whitespace-nowrap {selectedLanguage ===
+        lang.id
+          ? 'bg-blue-500 text-white shadow-sm'
+          : 'text-gray-600 dark:text-gray-400 hover:bg-gray-100 dark:hover:bg-slate-700'}"
+      >
+        {lang.name}
+      </button>
+    {/each}
+
+    <div class="flex-1"></div>
+
+    {#if hasCode}
+      <button
+        onclick={copyToClipboard}
+        class="px-3 py-1 text-sm text-gray-700 dark:text-gray-400 hover:text-gray-900 dark:hover:text-gray-200 focus:outline-none focus:ring-2 focus:ring-blue-500 rounded transition-colors"
+        aria-label="Copy code to clipboard"
+        title="Copy to clipboard"
+      >
+        <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <path
+            stroke-linecap="round"
+            stroke-linejoin="round"
+            stroke-width="2"
+            d="M8 16H6a2 2 0 01-2-2V6a2 2 0 012-2h8a2 2 0 012 2v2m-6 12h8a2 2 0 002-2v-8a2 2 0 00-2-2h-8a2 2 0 00-2 2v8a2 2 0 002 2z"
+          />
+        </svg>
+      </button>
+    {/if}
+  </div>
+
+  <!-- Code display -->
+  <div class="flex-1 overflow-auto px-6 py-4 code-viewer-output">
+    {#if !hasCode}
+      <div class="flex items-center justify-center h-full w-full text-gray-500 dark:text-gray-400">
+        <div
+          class="text-center bg-gray-50 dark:bg-gray-800 border-2 border-dashed border-gray-300 dark:border-gray-700 rounded-lg px-12 py-16 max-w-md w-full"
+        >
+          <svg
+            class="w-16 h-16 mx-auto mb-4 text-gray-400 dark:text-gray-600"
+            fill="none"
+            stroke="currentColor"
+            viewBox="0 0 24 24"
+          >
+            <path
+              stroke-linecap="round"
+              stroke-linejoin="round"
+              stroke-width="2"
+              d="M10 20l4-16m4 4l4 4-4 4M6 16l-4-4 4-4"
+            />
+          </svg>
+          <p class="text-sm font-semibold text-gray-700 dark:text-gray-400">
+            No code generated yet
+          </p>
+          <p class="text-xs mt-2 text-gray-600 dark:text-gray-500">
+            Click the Generate button to create code
+          </p>
+        </div>
+      </div>
+    {:else if !currentCode}
+      <div class="flex items-center justify-center h-full text-gray-600 dark:text-gray-400">
+        <p>No {languages.find((l) => l.id === selectedLanguage)?.name} code available</p>
+      </div>
+    {:else}
+      <pre
+        class="text-sm font-mono leading-relaxed code-block p-4 rounded-lg border border-gray-200 dark:border-gray-800"><code
+          >{@html highlightedCode}</code
+        ></pre>
+    {/if}
+  </div>
+</div>
+
+<style>
+  .code-viewer-container {
+    background: #ffffff;
+  }
+
+  .code-viewer-output {
+    background: #ffffff;
+  }
+
+  .code-block {
+    margin: 0;
+    padding: 1.5rem;
+    white-space: pre-wrap;
+    word-wrap: break-word;
+    background: #f9fafb;
+    border: 1px solid #e5e7eb;
+  }
+
+  code {
+    display: block;
+    color: #1f2937;
+    line-height: 1.6;
+  }
+
+  :global(.dark) .code-viewer-container {
+    background: #0f172a;
+  }
+
+  :global(.dark) .code-viewer-output {
+    background: #0f172a;
+  }
+
+  :global(.dark) .code-block {
+    background: #0d1117;
+    border-color: #30363d;
+  }
+
+  :global(.dark) code {
+    color: #e6edf3;
+  }
+</style>

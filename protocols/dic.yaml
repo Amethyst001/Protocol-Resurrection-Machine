@@ -1,0 +1,39 @@
+protocol:
+  name: DIC
+  port: 5000
+  rfc: "Custom DIC Protocol"
+  description: "Test protocol with complex format string"
+
+connection:
+  type: TCP
+  port: 5000
+  timeout: 30000
+
+messages:
+  - name: Request
+    direction: request
+    format: "START {id} | {payload} [TIMEOUT:{seconds}]\\n\\n"
+    fields:
+      - name: id
+        type: { kind: "number" }
+        required: true
+        description: "Request ID"
+      - name: payload
+        type: { kind: "string" }
+        required: true
+        description: "Request payload"
+      - name: seconds
+        type: { kind: "number" }
+        required: false
+        description: "Optional timeout in seconds"
+    description: "Request message with optional timeout"
+  
+  - name: Response
+    direction: response
+    format: "OK {status}\\n"
+    fields:
+      - name: status
+        type: { kind: "string" }
+        required: true
+        description: "Response status"
+    description: "Simple response message"

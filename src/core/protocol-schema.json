@@ -1,0 +1,779 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "$id": "https://protocol-resurrection-machine.dev/schema/protocol-spec.json",
+  "title": "Protocol Specification",
+  "description": "Schema for YAML protocol specifications in the Protocol Resurrection Machine",
+  "type": "object",
+  "required": [
+    "protocol",
+    "connection",
+    "messageTypes"
+  ],
+  "properties": {
+    "protocol": {
+      "type": "object",
+      "description": "Protocol metadata",
+      "required": [
+        "name",
+        "port",
+        "description"
+      ],
+      "properties": {
+        "name": {
+          "type": "string",
+          "minLength": 1,
+          "description": "Protocol name (e.g., 'Gopher', 'Finger')"
+        },
+        "rfc": {
+          "type": "string",
+          "description": "RFC reference number (e.g., '1436')"
+        },
+        "port": {
+          "type": "integer",
+          "minimum": 1,
+          "maximum": 65535,
+          "description": "Default port number"
+        },
+        "description": {
+          "type": "string",
+          "minLength": 1,
+          "description": "Protocol description"
+        },
+        "version": {
+          "type": "string",
+          "description": "Protocol version"
+        }
+      },
+      "additionalProperties": false
+    },
+    "connection": {
+      "type": "object",
+      "description": "Connection behavior specification",
+      "required": [
+        "type"
+      ],
+      "properties": {
+        "type": {
+          "type": "string",
+          "enum": [
+            "TCP",
+            "UDP"
+          ],
+          "description": "Connection type"
+        },
+        "handshake": {
+          "type": "object",
+          "description": "Handshake sequence specification",
+          "properties": {
+            "clientSends": {
+              "type": "string",
+              "description": "Message client sends during handshake"
+            },
+            "serverResponds": {
+              "type": "string",
+              "description": "Message server responds with"
+            },
+            "required": {
+              "type": "boolean",
+              "description": "Whether handshake is required"
+            }
+          },
+          "additionalProperties": false
+        },
+        "termination": {
+          "type": "object",
+          "description": "Connection termination specification",
+          "properties": {
+            "clientSends": {
+              "type": "string",
+              "description": "Message client sends to terminate"
+            },
+            "serverResponds": {
+              "type": "string",
+              "description": "Message server responds with"
+            },
+            "closeConnection": {
+              "type": "boolean",
+              "description": "Whether to close connection after termination"
+            }
+          },
+          "additionalProperties": false
+        },
+        "timeout": {
+          "type": "integer",
+          "minimum": 0,
+          "description": "Connection timeout in milliseconds"
+        },
+        "keepAlive": {
+          "type": "boolean",
+          "description": "Whether to use keep-alive"
+        }
+      },
+      "additionalProperties": false
+    },
+    "messageTypes": {
+      "description": "Message type definitions",
+      "oneOf": [
+        {
+          "type": "array",
+          "minItems": 1,
+          "items": {
+            "$ref": "#/definitions/messageType"
+          }
+        },
+        {
+          "type": "object",
+          "minProperties": 1,
+          "additionalProperties": {
+            "$ref": "#/definitions/messageTypeWithoutName"
+          }
+        }
+      ]
+    },
+    "types": {
+      "description": "Type definitions (enums, structs)",
+      "oneOf": [
+        {
+          "type": "array",
+          "items": {
+            "$ref": "#/definitions/typeDefinition"
+          }
+        },
+        {
+          "type": "object",
+          "additionalProperties": {
+            "$ref": "#/definitions/typeDefinitionWithoutName"
+          }
+        }
+      ]
+    },
+    "errorHandling": {
+      "type": "object",
+      "description": "Error handling specification",
+      "properties": {
+        "onParseError": {
+          "type": "string",
+          "enum": [
+            "throw",
+            "return",
+            "log"
+          ],
+          "description": "How to handle parse errors"
+        },
+        "onNetworkError": {
+          "type": "string",
+          "enum": [
+            "throw",
+            "retry",
+            "return"
+          ],
+          "description": "How to handle network errors"
+        },
+        "retryAttempts": {
+          "type": "integer",
+          "minimum": 0,
+          "description": "Number of retry attempts for network errors"
+        },
+        "retryDelay": {
+          "type": "integer",
+          "minimum": 0,
+          "description": "Delay between retries in milliseconds"
+        }
+      },
+      "additionalProperties": false
+    }
+  },
+  "additionalProperties": false,
+  "definitions": {
+    "messageType": {
+      "type": "object",
+      "required": [
+        "name",
+        "format"
+      ],
+      "properties": {
+        "name": {
+          "type": "string",
+          "minLength": 1,
+          "description": "Message type name"
+        },
+        "direction": {
+          "type": "string",
+          "enum": [
+            "request",
+            "response",
+            "bidirectional"
+          ],
+          "description": "Message direction"
+        },
+        "format": {
+          "type": "string",
+          "minLength": 1,
+          "description": "Message format string with {placeholder} syntax"
+        },
+        "fields": {
+          "oneOf": [
+            {
+              "type": "array",
+              "items": {
+                "$ref": "#/definitions/fieldDefinition"
+              }
+            },
+            {
+              "type": "object",
+              "additionalProperties": {
+                "$ref": "#/definitions/fieldDefinitionWithoutName"
+              }
+            }
+          ],
+          "description": "Field definitions"
+        },
+        "delimiter": {
+          "type": "string",
+          "description": "Field delimiter"
+        },
+        "terminator": {
+          "type": "string",
+          "description": "Message terminator"
+        },
+        "description": {
+          "type": "string",
+          "description": "Message type description"
+        }
+      },
+      "additionalProperties": false
+    },
+    "messageTypeWithoutName": {
+      "type": "object",
+      "required": [
+        "format"
+      ],
+      "properties": {
+        "direction": {
+          "type": "string",
+          "enum": [
+            "request",
+            "response",
+            "bidirectional"
+          ],
+          "description": "Message direction"
+        },
+        "format": {
+          "type": "string",
+          "minLength": 1,
+          "description": "Message format string with {placeholder} syntax"
+        },
+        "fields": {
+          "oneOf": [
+            {
+              "type": "array",
+              "items": {
+                "$ref": "#/definitions/fieldDefinition"
+              }
+            },
+            {
+              "type": "object",
+              "additionalProperties": {
+                "$ref": "#/definitions/fieldDefinitionWithoutName"
+              }
+            }
+          ],
+          "description": "Field definitions"
+        },
+        "delimiter": {
+          "type": "string",
+          "description": "Field delimiter"
+        },
+        "terminator": {
+          "type": "string",
+          "description": "Message terminator"
+        },
+        "description": {
+          "type": "string",
+          "description": "Message type description"
+        }
+      },
+      "additionalProperties": false
+    },
+    "fieldDefinition": {
+      "type": "object",
+      "required": [
+        "name",
+        "type"
+      ],
+      "properties": {
+        "name": {
+          "type": "string",
+          "minLength": 1,
+          "description": "Field name"
+        },
+        "type": {
+          "$ref": "#/definitions/fieldType"
+        },
+        "required": {
+          "type": "boolean",
+          "description": "Whether field is required"
+        },
+        "validation": {
+          "$ref": "#/definitions/validationRule"
+        },
+        "defaultValue": {
+          "description": "Default value if not required"
+        },
+        "description": {
+          "type": "string",
+          "description": "Field description"
+        }
+      },
+      "additionalProperties": false
+    },
+    "fieldDefinitionWithoutName": {
+      "type": "object",
+      "required": [
+        "type"
+      ],
+      "properties": {
+        "type": {
+          "$ref": "#/definitions/fieldType"
+        },
+        "required": {
+          "type": "boolean",
+          "description": "Whether field is required"
+        },
+        "validation": {
+          "$ref": "#/definitions/validationRule"
+        },
+        "defaultValue": {
+          "description": "Default value if not required"
+        },
+        "description": {
+          "type": "string",
+          "description": "Field description"
+        }
+      },
+      "additionalProperties": false
+    },
+    "fieldType": {
+      "oneOf": [
+        {
+          "type": "string",
+          "enum": [
+            "string",
+            "number",
+            "boolean",
+            "bytes"
+          ],
+          "description": "Simple field type"
+        },
+        {
+          "type": "object",
+          "required": [
+            "kind"
+          ],
+          "properties": {
+            "kind": {
+              "type": "string",
+              "enum": [
+                "string",
+                "number",
+                "boolean",
+                "bytes",
+                "enum"
+              ]
+            },
+            "maxLength": {
+              "type": "integer",
+              "minimum": 0,
+              "description": "Maximum length for string type"
+            },
+            "min": {
+              "type": "number",
+              "description": "Minimum value for number type"
+            },
+            "max": {
+              "type": "number",
+              "description": "Maximum value for number type"
+            },
+            "values": {
+              "type": "array",
+              "minItems": 1,
+              "items": {
+                "type": "string"
+              },
+              "description": "Valid values for enum type"
+            },
+            "length": {
+              "type": "integer",
+              "minimum": 0,
+              "description": "Fixed length for bytes type"
+            }
+          },
+          "additionalProperties": false,
+          "allOf": [
+            {
+              "if": {
+                "properties": {
+                  "kind": {
+                    "const": "string"
+                  }
+                }
+              },
+              "then": {
+                "properties": {
+                  "kind": true,
+                  "maxLength": true
+                },
+                "additionalProperties": false
+              }
+            },
+            {
+              "if": {
+                "properties": {
+                  "kind": {
+                    "const": "number"
+                  }
+                }
+              },
+              "then": {
+                "properties": {
+                  "kind": true,
+                  "min": true,
+                  "max": true
+                },
+                "additionalProperties": false
+              }
+            },
+            {
+              "if": {
+                "properties": {
+                  "kind": {
+                    "const": "enum"
+                  }
+                }
+              },
+              "then": {
+                "required": [
+                  "values"
+                ],
+                "properties": {
+                  "kind": true,
+                  "values": true
+                },
+                "additionalProperties": false
+              }
+            },
+            {
+              "if": {
+                "properties": {
+                  "kind": {
+                    "const": "bytes"
+                  }
+                }
+              },
+              "then": {
+                "properties": {
+                  "kind": true,
+                  "length": true
+                },
+                "additionalProperties": false
+              }
+            },
+            {
+              "if": {
+                "properties": {
+                  "kind": {
+                    "const": "boolean"
+                  }
+                }
+              },
+              "then": {
+                "properties": {
+                  "kind": true
+                },
+                "additionalProperties": false
+              }
+            }
+          ]
+        }
+      ]
+    },
+    "validationRule": {
+      "type": "object",
+      "properties": {
+        "pattern": {
+          "type": "string",
+          "description": "Regex pattern for string validation"
+        },
+        "minLength": {
+          "type": "integer",
+          "minimum": 0,
+          "description": "Minimum length for strings"
+        },
+        "maxLength": {
+          "type": "integer",
+          "minimum": 0,
+          "description": "Maximum length for strings"
+        },
+        "min": {
+          "type": "number",
+          "description": "Minimum value for numbers"
+        },
+        "max": {
+          "type": "number",
+          "description": "Maximum value for numbers"
+        },
+        "custom": {
+          "type": "string",
+          "description": "Custom validation function name"
+        }
+      },
+      "additionalProperties": false
+    },
+    "typeDefinition": {
+      "type": "object",
+      "required": [
+        "name",
+        "kind"
+      ],
+      "properties": {
+        "name": {
+          "type": "string",
+          "minLength": 1,
+          "description": "Type name"
+        },
+        "kind": {
+          "type": "string",
+          "enum": [
+            "enum",
+            "struct"
+          ],
+          "description": "Type kind"
+        },
+        "values": {
+          "oneOf": [
+            {
+              "type": "array",
+              "items": {
+                "$ref": "#/definitions/enumValue"
+              }
+            },
+            {
+              "type": "object",
+              "additionalProperties": {
+                "$ref": "#/definitions/enumValueWithoutName"
+              }
+            }
+          ],
+          "description": "Enum values (required if kind is 'enum')"
+        },
+        "fields": {
+          "oneOf": [
+            {
+              "type": "array",
+              "items": {
+                "$ref": "#/definitions/fieldDefinition"
+              }
+            },
+            {
+              "type": "object",
+              "additionalProperties": {
+                "$ref": "#/definitions/fieldDefinitionWithoutName"
+              }
+            }
+          ],
+          "description": "Struct fields (required if kind is 'struct')"
+        }
+      },
+      "additionalProperties": false,
+      "allOf": [
+        {
+          "if": {
+            "properties": {
+              "kind": {
+                "const": "enum"
+              }
+            }
+          },
+          "then": {
+            "required": [
+              "values"
+            ]
+          }
+        },
+        {
+          "if": {
+            "properties": {
+              "kind": {
+                "const": "struct"
+              }
+            }
+          },
+          "then": {
+            "required": [
+              "fields"
+            ]
+          }
+        }
+      ]
+    },
+    "typeDefinitionWithoutName": {
+      "type": "object",
+      "required": [
+        "kind"
+      ],
+      "properties": {
+        "kind": {
+          "type": "string",
+          "enum": [
+            "enum",
+            "struct"
+          ],
+          "description": "Type kind"
+        },
+        "values": {
+          "oneOf": [
+            {
+              "type": "array",
+              "items": {
+                "$ref": "#/definitions/enumValue"
+              }
+            },
+            {
+              "type": "object",
+              "additionalProperties": {
+                "$ref": "#/definitions/enumValueWithoutName"
+              }
+            }
+          ],
+          "description": "Enum values (required if kind is 'enum')"
+        },
+        "fields": {
+          "oneOf": [
+            {
+              "type": "array",
+              "items": {
+                "$ref": "#/definitions/fieldDefinition"
+              }
+            },
+            {
+              "type": "object",
+              "additionalProperties": {
+                "$ref": "#/definitions/fieldDefinitionWithoutName"
+              }
+            }
+          ],
+          "description": "Struct fields (required if kind is 'struct')"
+        }
+      },
+      "additionalProperties": false,
+      "allOf": [
+        {
+          "if": {
+            "properties": {
+              "kind": {
+                "const": "enum"
+              }
+            }
+          },
+          "then": {
+            "required": [
+              "values"
+            ]
+          }
+        },
+        {
+          "if": {
+            "properties": {
+              "kind": {
+                "const": "struct"
+              }
+            }
+          },
+          "then": {
+            "required": [
+              "fields"
+            ]
+          }
+        }
+      ]
+    },
+    "enumValue": {
+      "oneOf": [
+        {
+          "type": "string",
+          "description": "Simple enum value"
+        },
+        {
+          "type": "number",
+          "description": "Numeric enum value"
+        },
+        {
+          "type": "object",
+          "required": [
+            "name",
+            "value"
+          ],
+          "properties": {
+            "name": {
+              "type": "string",
+              "minLength": 1,
+              "description": "Enum value name"
+            },
+            "value": {
+              "oneOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "number"
+                }
+              ],
+              "description": "Enum value"
+            },
+            "description": {
+              "type": "string",
+              "description": "Optional description"
+            }
+          },
+          "additionalProperties": false
+        }
+      ]
+    },
+    "enumValueWithoutName": {
+      "oneOf": [
+        {
+          "type": "string",
+          "description": "Simple enum value"
+        },
+        {
+          "type": "number",
+          "description": "Numeric enum value"
+        },
+        {
+          "type": "object",
+          "required": [
+            "value"
+          ],
+          "properties": {
+            "value": {
+              "oneOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "number"
+                }
+              ],
+              "description": "Enum value"
+            },
+            "description": {
+              "type": "string",
+              "description": "Optional description"
+            }
+          },
+          "additionalProperties": false
+        }
+      ]
+    }
+  }
+}

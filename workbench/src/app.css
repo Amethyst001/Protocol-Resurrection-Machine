@@ -1,0 +1,589 @@
+@import "tailwindcss";
+
+/* ============================================
+   THEME SYSTEM - CSS Variables
+   Supports: Halloween/Pro themes + Light/Dark modes
+   ============================================ */
+
+:root {
+  /* Halloween Theme (Default) - Dark Mode */
+  --primary: #ff7518;
+  /* Halloween orange */
+  --primary-hover: #e66710;
+  --accent: #6b2cf5;
+  /* Halloween purple */
+  --accent-hover: #5a24d4;
+
+  --bg-primary: #1e1e1e;
+  /* Dark slate */
+  --bg-secondary: #252526;
+  --bg-tertiary: #2d2d30;
+
+  --text-primary: rgb(243 244 246);
+  --text-secondary: rgb(209 213 219);
+  --text-tertiary: rgb(156 163 175);
+
+  --border-primary: #3e3e42;
+  --border-secondary: #2d2d30;
+
+  --status-success: #89d185;
+  --status-warning: #cca700;
+  --status-error: #f48771;
+  --status-info: #75beff;
+
+  --scrollbar-track: #252526;
+  --scrollbar-thumb: rgb(75 85 99);
+  --scrollbar-thumb-hover: rgb(107 114 128);
+}
+
+/* Halloween Theme Specifics */
+:root[data-theme="halloween"] {
+  --bg-primary: #0d0221;
+  /* Deep Void Purple */
+  --bg-secondary: #261C2C;
+  /* Dark Purple-Grey */
+  --bg-tertiary: #1a052e;
+  /* Darker Purple */
+
+  --primary: #ff7518;
+  /* Pumpkin Orange */
+  --primary-hover: #ff9045;
+
+  --accent: #39ff14;
+  /* Slime Green */
+  --accent-hover: #2ce60f;
+
+  --border-primary: #ff7518;
+  /* Glowing Orange */
+  --border-secondary: #6b2cf5;
+  /* Witch Purple */
+
+  --text-primary: #f2f2f2;
+  /* Bone White */
+}
+
+/* CRT Flicker Animation */
+@keyframes haunted-flicker {
+  0% {
+    opacity: 0.97;
+  }
+
+  5% {
+    opacity: 0.95;
+  }
+
+  10% {
+    opacity: 0.9;
+  }
+
+  15% {
+    opacity: 0.95;
+  }
+
+  20% {
+    opacity: 0.99;
+  }
+
+  25% {
+    opacity: 0.95;
+  }
+
+  30% {
+    opacity: 0.9;
+  }
+
+  35% {
+    opacity: 0.96;
+  }
+
+  40% {
+    opacity: 0.98;
+  }
+
+  45% {
+    opacity: 0.95;
+  }
+
+  50% {
+    opacity: 0.99;
+  }
+
+  55% {
+    opacity: 0.93;
+  }
+
+  60% {
+    opacity: 0.9;
+  }
+
+  65% {
+    opacity: 0.96;
+  }
+
+  70% {
+    opacity: 1;
+  }
+
+  75% {
+    opacity: 0.97;
+  }
+
+  80% {
+    opacity: 0.95;
+  }
+
+  85% {
+    opacity: 0.92;
+  }
+
+  90% {
+    opacity: 0.98;
+  }
+
+  95% {
+    opacity: 0.95;
+  }
+
+  100% {
+    opacity: 0.97;
+  }
+}
+
+.console-halloween {
+  font-family: 'Courier New', monospace !important;
+  text-shadow: 0 0 4px currentColor;
+  animation: haunted-flicker 4s infinite;
+}
+
+/* Halloween Theme - Light Mode */
+:root[data-mode="light"] {
+  --bg-primary: white;
+  --bg-secondary: rgb(243 244 246);
+  --bg-tertiary: rgb(229 231 235);
+
+  --text-primary: rgb(17 24 39);
+  --text-secondary: rgb(55 65 81);
+  --text-tertiary: rgb(107 114 128);
+
+  --border-primary: rgb(209 213 219);
+  --border-secondary: rgb(229 231 235);
+
+  --scrollbar-track: rgb(243 244 246);
+  --scrollbar-thumb: rgb(156 163 175);
+  --scrollbar-thumb-hover: rgb(107 114 128);
+}
+
+/* Pro Theme - Dark Mode */
+:root[data-theme="pro"] {
+  --primary: #3b82f6;
+  /* Professional blue */
+  --primary-hover: #2563eb;
+  --accent: #0f172a;
+  /* Slate */
+  --accent-hover: #1e293b;
+}
+
+/* Pro Theme - Light Mode */
+:root[data-theme="pro"][data-mode="light"] {
+  --primary: #2563eb;
+  --primary-hover: #1d4ed8;
+  --accent: #64748b;
+  --accent-hover: #475569;
+}
+
+/* Custom styles for IDE-like appearance */
+body {
+  background-color: var(--bg-primary);
+  color: var(--text-primary);
+  font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+  font-size: 13px;
+  line-height: 1.5;
+}
+
+/* Legacy dark mode class support (for TailwindCSS) */
+.dark body {
+  background-color: var(--bg-primary);
+  color: var(--text-primary);
+}
+
+/* Ensure color scheme is applied to root element */
+html.dark,
+html[data-mode="dark"] {
+  color-scheme: dark;
+}
+
+html.light,
+html[data-mode="light"] {
+  color-scheme: light;
+}
+
+/* Scrollbar styling */
+::-webkit-scrollbar {
+  width: 10px;
+  height: 10px;
+}
+
+::-webkit-scrollbar-track {
+  background-color: var(--scrollbar-track);
+}
+
+::-webkit-scrollbar-thumb {
+  background-color: var(--scrollbar-thumb);
+  border-radius: 0.25rem;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background-color: var(--scrollbar-thumb-hover);
+}
+
+/* Focus indicators for accessibility */
+.focus-visible {
+  outline: none;
+  box-shadow: 0 0 0 2px var(--primary), 0 0 0 4px transparent;
+}
+
+/* Button styles */
+.btn {
+  padding: 0.5rem 1rem;
+  border-radius: 0.5rem;
+  font-weight: 500;
+  transition: background-color 150ms;
+  border: 1px solid transparent;
+}
+
+.btn:focus {
+  outline: none;
+  box-shadow: 0 0 0 2px transparent, 0 0 0 4px transparent;
+}
+
+.btn:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+.btn-primary {
+  background-color: var(--primary);
+  color: white;
+  border-color: var(--primary-hover);
+}
+
+.btn-primary:hover:not(:disabled) {
+  background-color: var(--primary-hover);
+}
+
+.btn-secondary {
+  background-color: var(--bg-tertiary);
+  color: var(--text-primary);
+  border-color: var(--border-primary);
+}
+
+.btn-secondary:hover:not(:disabled) {
+  background-color: var(--bg-secondary);
+}
+
+/* Panel styles */
+.panel {
+  background-color: var(--bg-primary);
+  border: 1px solid var(--border-primary);
+  border-radius: 0.5rem;
+  box-shadow: 0 1px 3px 0 rgb(0 0 0 / 0.1);
+}
+
+.panel-header {
+  padding: 0.5rem 1rem;
+  border-bottom: 1px solid var(--border-primary);
+  background-color: var(--bg-secondary);
+  font-weight: 600;
+  font-size: 0.875rem;
+  color: var(--text-secondary);
+}
+
+.panel-content {
+  padding: 1rem;
+}
+
+/* Code block styles */
+.code-block {
+  font-family: 'Courier New', monospace;
+  font-size: 0.875rem;
+  background-color: var(--bg-secondary);
+  padding: 1rem;
+  border-radius: 0.5rem;
+  overflow-x: auto;
+}
+
+/* Status indicators */
+.status-success {
+  color: var(--status-success);
+}
+
+.status-warning {
+  color: var(--status-warning);
+}
+
+.status-error {
+  color: var(--status-error);
+}
+
+.status-info {
+  color: var(--status-info);
+}
+
+/* Topology Active Node Animation */
+.active-node {
+  animation: node-glow 1s ease-in-out;
+}
+
+@keyframes node-glow {
+
+  0%,
+  100% {
+    filter: drop-shadow(0 0 0 transparent);
+  }
+
+  50% {
+    filter: drop-shadow(0 0 8px var(--primary));
+  }
+}
+
+/* Reactive Topology Pulse - for simulation feedback */
+.active-pulse {
+  animation: pulse-glow 1.5s infinite ease-in-out;
+}
+
+@keyframes pulse-glow {
+
+  0%,
+  100% {
+    filter: drop-shadow(0 0 5px #39ff14);
+    opacity: 1;
+  }
+
+  50% {
+    filter: drop-shadow(0 0 15px #39ff14);
+    opacity: 0.7;
+  }
+}
+
+/* Spooky DLC Effects */
+
+/* 1. Jumpscare Shake */
+@keyframes shake-glitch {
+
+  0%,
+  100% {
+    transform: translate3d(0, 0, 0);
+  }
+
+  10%,
+  90% {
+    transform: translate3d(-2px, 0, 0);
+  }
+
+  20%,
+  80% {
+    transform: translate3d(4px, 0, 0);
+  }
+
+  30%,
+  50%,
+  70% {
+    transform: translate3d(-6px, 0, 0);
+  }
+
+  40%,
+  60% {
+    transform: translate3d(6px, 0, 0);
+  }
+}
+
+.shake-glitch {
+  animation: shake-glitch 0.4s cubic-bezier(.36, .07, .19, .97) both;
+  border: 2px solid #ff0000 !important;
+  box-shadow: 0 0 15px #ff0000, inset 0 0 20px rgba(255, 0, 0, 0.2) !important;
+}
+
+/* 2. Blood-Red Scrollbars (Halloween Mode Only) */
+[data-theme="halloween"] ::-webkit-scrollbar {
+  width: 12px;
+  height: 12px;
+  background: #0d0221;
+}
+
+[data-theme="halloween"] ::-webkit-scrollbar-track {
+  background: #0d0221;
+}
+
+[data-theme="halloween"] ::-webkit-scrollbar-thumb {
+  background-color: #ff0000;
+  border-radius: 6px;
+  border: 3px solid #0d0221;
+}
+
+[data-theme="halloween"] ::-webkit-scrollbar-thumb:hover {
+  background-color: #cc0000;
+}
+
+[data-theme="halloween"] ::-webkit-scrollbar-corner {
+  background: #0d0221;
+}
+
+/* 3. Fog Animation */
+@keyframes fog-scroll {
+  0% {
+    background-position: 0 0;
+  }
+
+  100% {
+    background-position: 200% 0;
+  }
+}
+
+.fog-layer {
+  position: absolute;
+  bottom: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  background: url('https://raw.githubusercontent.com/danielstuart14/CSS_FOG_ANIMATION/master/fog1.png') repeat-x;
+  background-size: 200% 100%;
+  animation: fog-scroll 60s linear infinite;
+  z-index: 1;
+  pointer-events: none;
+  opacity: 0.3;
+}
+
+.fog-layer-2 {
+  position: absolute;
+  bottom: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  background: url('https://raw.githubusercontent.com/danielstuart14/CSS_FOG_ANIMATION/master/fog2.png') repeat-x;
+  background-size: 200% 100%;
+  animation: fog-scroll 40s linear infinite reverse;
+  z-index: 2;
+  pointer-events: none;
+  opacity: 0.2;
+}
+
+/* 4. Ghostly Cursor */
+[data-theme="halloween"] {
+  cursor: url('/cursor-hand.svg') 4 4, auto;
+}
+
+[data-theme="halloween"] button,
+[data-theme="halloween"] a,
+[data-theme="halloween"] input,
+[data-theme="halloween"] select,
+[data-theme="halloween"] [role="button"] {
+  cursor: url('/cursor-hand.svg') 4 4, pointer;
+}
+
+[data-theme="halloween"] button:active,
+[data-theme="halloween"] a:active,
+[data-theme="halloween"] input:active,
+[data-theme="halloween"] select:active,
+[data-theme="halloween"] [role="button"]:active {
+  cursor: url('/cursor-hand-active.svg') 4 4, pointer;
+}
+
+[data-theme="halloween"] p,
+[data-theme="halloween"] span,
+[data-theme="halloween"] h1,
+[data-theme="halloween"] h2,
+[data-theme="halloween"] h3,
+[data-theme="halloween"] h4,
+[data-theme="halloween"] h5,
+[data-theme="halloween"] h6,
+[data-theme="halloween"] input[type="text"],
+[data-theme="halloween"] input[type="email"],
+[data-theme="halloween"] input[type="password"],
+[data-theme="halloween"] textarea,
+[data-theme="halloween"] pre,
+[data-theme="halloween"] code,
+[data-theme="halloween"] li,
+[data-theme="halloween"] td,
+[data-theme="halloween"] th,
+[data-theme="halloween"] label,
+[data-theme="halloween"] strong,
+[data-theme="halloween"] em,
+[data-theme="halloween"] b,
+[data-theme="halloween"] i,
+[data-theme="halloween"] small,
+[data-theme="halloween"] mark,
+[data-theme="halloween"] q,
+[data-theme="halloween"] blockquote {
+  cursor: url('/cursor-text.svg') 16 16, text;
+}
+
+/* Ensure buttons and interactive elements always show the hand cursor */
+[data-theme="halloween"] button *,
+[data-theme="halloween"] a *,
+[data-theme="halloween"] [role="button"] * {
+  cursor: inherit;
+}
+
+/* ============================================
+   TOPOLOGY ANIMATION ENGINE
+   Animations for topology diagram nodes and edges
+   ============================================ */
+
+/* Node pulse animation with glow effect */
+@keyframes pulse-glow {
+  0%, 100% {
+    filter: drop-shadow(0 0 0 transparent);
+    transform: scale(1) translateZ(0);
+  }
+  50% {
+    filter: drop-shadow(0 0 8px rgba(59, 130, 246, 0.8));
+    transform: scale(1.05) translateZ(0);
+  }
+}
+
+/* Edge flow animation with stroke-dashoffset */
+@keyframes edge-flow {
+  from {
+    stroke-dashoffset: 0;
+  }
+  to {
+    stroke-dashoffset: -15;
+  }
+}
+
+/* Pulse glow class for node animations */
+.animate-pulse-glow {
+  animation: pulse-glow 600ms ease-in-out;
+  will-change: transform, filter;
+  transform: translateZ(0);
+}
+
+/* Edge flow class for edge animations */
+.animate-edge-flow {
+  stroke-dasharray: 10 5;
+  animation: edge-flow 400ms linear;
+  will-change: transform, filter;
+  transform: translateZ(0);
+}
+
+/* Reverse class for backward edge animations */
+.animate-edge-flow.reverse {
+  animation-direction: reverse;
+}
+
+/* Respect reduced motion preference */
+@media (prefers-reduced-motion: reduce) {
+  .animate-pulse-glow,
+  .animate-edge-flow {
+    animation: none !important;
+    filter: none !important;
+    transform: none !important;
+  }
+  
+  /* Also disable existing topology animations */
+  .active-node,
+  .active-pulse {
+    animation: none !important;
+    filter: none !important;
+  }
+}

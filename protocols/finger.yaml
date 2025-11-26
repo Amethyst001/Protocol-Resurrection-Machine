@@ -1,0 +1,98 @@
+# ============================================================================
+# Finger Protocol Specification
+# ============================================================================
+# This YAML file defines the Finger protocol (RFC 1288) for the Protocol
+# Resurrection Machine. The system will automatically generate a complete
+# implementation including parser, serializer, client, tests, and UI.
+#
+# Protocol Overview:
+# Finger is a simple user information lookup protocol from 1977. Clients
+# send a username (or empty string for all users) followed by CRLF, and
+# servers respond with free-form text containing user information.
+#
+# Example Usage:
+#   1. Define protocol metadata and connection parameters
+#   2. Specify message types (request/response formats)
+#   3. Define field types and validation rules
+#   4. Configure error handling behavior
+#   5. Run: prm generate protocols/finger.yaml
+# ============================================================================
+
+# ----------------------------------------------------------------------------
+# Protocol Metadata
+# ----------------------------------------------------------------------------
+# Basic information about the protocol including name, RFC reference,
+# default port, and description. This metadata is used in generated
+# documentation and UI.
+protocol:
+  name: Finger                    # Protocol name (used for generated file names)
+  rfc: "1288"                     # RFC number defining the protocol
+  port: 79                        # Default port number (1-65535)
+  description: The Finger protocol for user information lookup
+
+# ----------------------------------------------------------------------------
+# Connection Specification
+# ----------------------------------------------------------------------------
+# Defines how clients connect to servers, including transport protocol,
+# timeouts, and connection reuse behavior.
+connection:
+  type: TCP                       # Transport protocol: TCP or UDP
+  timeout: 30000                  # Connection timeout in milliseconds
+  keepAlive: false                # Whether to reuse connections for multiple requests
+
+# ----------------------------------------------------------------------------
+# Message Types
+# ----------------------------------------------------------------------------
+# Defines the structure of protocol messages. Each message type specifies:
+# - direction: request, response, or bidirectional
+# - format: Template string with {placeholder} syntax
+# - fields: List of fields with types and validation rules
+#
+# Format String Syntax:
+# - {fieldName}: Variable field extracted/inserted during parse/serialize
+# - Fixed text: Literal strings that must appear exactly
+# - \r\n: CRLF line ending (use \n for LF only)
+messageTypes:
+  # Finger Request Message
+  # Clients send a username (or empty string) followed by CRLF.
+  # Empty username requests information about all users.
+  # Example: "jdoe\r\n" or "\r\n"
+  # 
+  # REAL-WORLD COMPATIBILITY:
+  # Per RFC 1288, an empty username (just "\r\n") is valid and means
+  # "show information about all logged-in users". The username field
+  # is therefore optional with an empty string as the default.
+  - name: Request
+    direction: request            # This message is sent by clients
+    format: "{username}\r\n"      # Format: username + CRLF
+    terminator: "\r\n"            # Line ending (CRLF for Finger)
+    fields:
+      - name: username            # Field name (used in generated types)
+        type: string              # Field type: string, number, enum, bytes, boolean
+        required: false           # OPTIONAL: Empty username = query all users (RFC 1288)
+        defaultValue: ""          # Default to empty string (query all users)
+        validation:
+          maxLength: 512          # Maximum username length
+
+  # Finger Response Message
+  # Servers respond with free-form text containing user information.
+  # Format is not standardized - can be multi-line, formatted however
+  # the server chooses. Common fields include login name, full name,
+  # office location, phone, login time, idle time, etc.
+  - name: Response
+    direction: response           # This message is sent by servers
+    format: "{text}"              # Format: free-form text (no fixed structure)
+    fields:
+      - name: text                # Response text (any format)
+        type: string
+        required: true            # Response must contain some text
+
+# ----------------------------------------------------------------------------
+# Error Handling Configuration
+# ----------------------------------------------------------------------------
+# Defines how the generated implementation handles errors.
+errorHandling:
+  onParseError: return            # return: Return error object, throw: Throw exception
+  onNetworkError: retry           # retry: Retry with backoff, return: Return error, throw: Throw
+  retryAttempts: 3                # Number of retry attempts for network errors
+  retryDelay: 1000                # Initial delay between retries (milliseconds)

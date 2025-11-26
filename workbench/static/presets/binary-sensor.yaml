@@ -1,0 +1,24 @@
+protocol:
+  name: "Binary Sensor"
+  description: "IoT sensor protocol with binary headers and float data"
+  port: 5000
+  format: binary
+
+connection:
+  type: UDP
+  timeout: 5000
+
+messageTypes:
+  - name: SensorReading
+    # format string looks good: uses specific types {header:u16}
+    format: "{header:u16}{sensor_id:u8}{temperature:f32}{humidity:f32}\r\n"
+    direction: request
+    fields:
+      - name: header
+        type: u16      # <--- FIXED (Was 'integer')
+      - name: sensor_id
+        type: u8       # <--- FIXED (Was 'integer')
+      - name: temperature
+        type: f32      # <--- FIXED (Was 'number')
+      - name: humidity
+        type: f32      # <--- FIXED (Was 'number')

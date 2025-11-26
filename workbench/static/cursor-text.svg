@@ -1,0 +1,15 @@
+<svg width="32" height="32" viewBox="0 0 32 32" fill="none" xmlns="http://www.w3.org/2000/svg">
+  <filter id="shadow" x="-2" y="-2" width="36" height="36">
+    <feDropShadow dx="1" dy="1" stdDeviation="1" flood-color="#000" flood-opacity="0.5"/>
+  </filter>
+  <g filter="url(#shadow)">
+    <!-- Vertical Bone Shaft - Reduced height from 24px to 16px (centered) -->
+    <path d="M16 8 V24" stroke="#f2f2f2" stroke-width="2" stroke-linecap="round"/>
+    
+    <!-- Top Bone Joint - Moved down to y=8 -->
+    <path d="M13 8 Q13 6 14.5 6 H17.5 Q19 6 19 8 Q19 9.5 17.5 9.5 H14.5 Q13 9.5 13 8" fill="#f2f2f2" stroke="#0d0221" stroke-width="1"/>
+    
+    <!-- Bottom Bone Joint - Moved up to y=24 -->
+    <path d="M13 24 Q13 22.5 14.5 22.5 H17.5 Q19 22.5 19 24 Q19 26 17.5 26 H14.5 Q13 26 13 24" fill="#f2f2f2" stroke="#0d0221" stroke-width="1"/>
+  </g>
+</svg>

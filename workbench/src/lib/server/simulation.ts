@@ -1,0 +1,69 @@
+/**
+ * Server-side Simulation Logic
+ * Compatible with Vercel/Serverless environments (no child_process needed)
+ */
+
+function sleep(ms: number) {
+    return new Promise((resolve) => setTimeout(resolve, ms));
+}
+
+export async function runSimulationStream(controller: ReadableStreamDefaultController) {
+    const encoder = new TextEncoder();
+
+    function log(prefix: string, message: string) {
+        if (controller.desiredSize === null) return; // Stream closed
+        const chunk = JSON.stringify({ message: `[${prefix}] ${message}` }) + '\n';
+        try {
+            controller.enqueue(encoder.encode(chunk));
+        } catch (e) {
+            // Ignore enqueue errors if stream is closed
+        }
+    }
+
+    try {
+        log('SYSTEM', 'Initializing simulation environment...');
+        await sleep(800);
+
+        log('SYSTEM', 'Compiling generated code...');
+        await sleep(1200);
+        log('SYSTEM', 'Compilation successful');
+
+        log('GO', 'Starting Gateway Server on port 8080...');
+        await sleep(500);
+        log('GO', 'Listening for incoming connections');
+
+        await sleep(800);
+        log('RUST', 'Sensor node initialized');
+        log('RUST', 'Connecting to gateway...');
+
+        await sleep(600);
+        log('GO', 'Accepted connection from 192.168.1.50');
+        log('RUST', 'Connection established');
+
+        for (let i = 0; i < 3; i++) {
+            await sleep(1000);
+            const temp = (20 + Math.random() * 5).toFixed(2);
+            log('RUST', `Sending telemetry: { temp: ${temp}C, humidity: 45% }`);
+            await sleep(200);
+            log('GO', `Received packet: ${temp}C`);
+            await sleep(200);
+            log('PYTHON', `Analytics: Processing data point ${temp}`);
+        }
+
+        await sleep(1000);
+        log('TYPESCRIPT', 'Dashboard client connected');
+        log('GO', 'Streaming real-time updates to client');
+        log('TYPESCRIPT', 'UI updated with latest sensor data');
+
+        await sleep(1500);
+        log('SYSTEM', 'Simulation completed successfully');
+    } catch (error) {
+        log('SYSTEM', `Simulation error: ${error}`);
+    } finally {
+        try {
+            controller.close();
+        } catch (e) {
+            // Ignore close errors
+        }
+    }
+}

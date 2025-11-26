@@ -1,0 +1,52 @@
+protocol:
+  name: Archie
+  version: 1.0.0
+  description: A tool for indexing FTP archives, allowing users to locate specific files.
+  port: 1525
+
+connection:
+  type: TCP
+
+
+
+messageTypes:
+  - name: Query
+    direction: request
+    format: "find {searchType} {query}"
+    fields:
+      - name: searchType
+        type:
+          kind: enum
+          values: ["exact", "sub", "regex"]
+        required: true
+        description: Type of search to perform
+      - name: query
+        type: string
+        required: true
+        description: The filename or pattern to search for
+
+  - name: Response
+    direction: response
+    format: "MATCH {host} {path} {size} {date}"
+    fields:
+      - name: host
+        type: string
+        required: true
+        description: Hostname where file was found
+      - name: path
+        type: string
+        required: true
+        description: Full path to the file
+      - name: size
+        type: number
+        required: true
+        description: Size of the file in bytes
+      - name: date
+        type: string
+        required: true
+        description: Modification date
+
+errorHandling:
+  onNetworkError: retry
+  retryAttempts: 2
+  retryDelay: 2000

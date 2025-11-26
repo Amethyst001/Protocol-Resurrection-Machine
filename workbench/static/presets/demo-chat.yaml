@@ -1,0 +1,37 @@
+protocol:
+  name: "Demo Chat"
+  description: "Text-based chat protocol with authentication and messages"
+  port: 8080
+  format: text
+
+connection:
+  type: TCP
+  timeout: 60000
+
+messageTypes:
+  - name: Login
+    format: "LOGIN {username} {password}\n"
+    direction: request
+    fields:
+      - name: username
+        type: string
+      - name: password
+        type: string
+
+  - name: Message
+    format: "MSG {from_user} {to_user} {content}\n"
+    direction: bidirectional  
+    fields:
+      - name: from_user
+        type: string
+      - name: to_user
+        type: string
+      - name: content
+        type: string
+
+  - name: Logout
+    format: "LOGOUT {username}\n"
+    direction: request
+    fields:
+      - name: username
+        type: string

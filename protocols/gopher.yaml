@@ -1,0 +1,193 @@
+# ============================================================================
+# Gopher Protocol Specification
+# ============================================================================
+# This YAML file defines the Gopher protocol (RFC 1436) for the Protocol
+# Resurrection Machine. The system will automatically generate a complete
+# implementation including parser, serializer, client, tests, and UI.
+#
+# Protocol Overview:
+# Gopher is a hierarchical document retrieval protocol from 1991. Clients
+# send a selector string to request content, and servers respond with either
+# directory listings or file content. Directory items are tab-delimited lines
+# containing type, display text, selector, host, and port.
+#
+# Example Usage:
+#   1. Define protocol metadata and connection parameters
+#   2. Specify message types (request/response formats)
+#   3. Define field types and validation rules
+#   4. Configure error handling behavior
+#   5. Run: prm generate protocols/gopher.yaml
+# ============================================================================
+
+# ----------------------------------------------------------------------------
+# Protocol Metadata
+# ----------------------------------------------------------------------------
+# Basic information about the protocol including name, RFC reference,
+# default port, and description. This metadata is used in generated
+# documentation and UI.
+protocol:
+  name: Gopher                    # Protocol name (used for generated file names)
+  rfc: "1436"                     # RFC number defining the protocol
+  port: 70                        # Default port number (1-65535)
+  description: The Gopher protocol for hierarchical document retrieval
+
+# ----------------------------------------------------------------------------
+# Connection Specification
+# ----------------------------------------------------------------------------
+# Defines how clients connect to servers, including transport protocol,
+# timeouts, and connection reuse behavior.
+connection:
+  type: TCP                       # Transport protocol: TCP or UDP
+  timeout: 30000                  # Connection timeout in milliseconds
+  keepAlive: false                # Whether to reuse connections for multiple requests
+  handshake:                      # Handshake configuration for fingerprinting
+    required: false               # No handshake required before requests
+    clientSends: "\r\n"           # Client sends empty selector (root directory request)
+    # Note: serverResponds is not set because Gopher doesn't send a banner
+    # The server only responds after receiving the client's selector
+
+# ----------------------------------------------------------------------------
+# Message Types
+# ----------------------------------------------------------------------------
+# Defines the structure of protocol messages. Each message type specifies:
+# - direction: request, response, or bidirectional
+# - format: Template string with {placeholder} syntax
+# - fields: List of fields with types and validation rules
+#
+# Format String Syntax:
+# - {fieldName}: Variable field extracted/inserted during parse/serialize
+# - Fixed text: Literal strings that must appear exactly
+# - \r\n: CRLF line ending (use \n for LF only)
+# - \t: Tab delimiter
+messageTypes:
+  # Gopher Request Message
+  # Clients send a selector string followed by CRLF to request content.
+  # An empty selector requests the root directory.
+  - name: Request
+    direction: request            # This message is sent by clients
+    format: "{selector}\r\n"      # Format: selector + CRLF
+    terminator: "\r\n"            # Line ending (CRLF for Gopher)
+    fields:
+      - name: selector            # Field name (used in generated types)
+        type: string              # Field type: string, number, enum, bytes, boolean
+        required: true            # Whether field must be present
+        validation:
+          maxLength: 255          # Maximum selector length
+
+  # Gopher Directory Item Message
+  # Servers respond with directory listings where each line represents one item.
+  # Format: type + display + TAB + selector + TAB + host + TAB + port + CRLF
+  # Example: "1About\t/about\tgopher.example.com\t70\r\n"
+  # 
+  # ============================================================================
+  # REAL-WORLD COMPATIBILITY NOTES (RFC 1436 vs. Reality)
+  # ============================================================================
+  # 
+  # RFC 1436 defines the format as: type + display + TAB + selector + TAB + host + TAB + port
+  # However, real-world Gopher servers (especially legacy ones like gopher.floodgap.com)
+  # deviate from this in several ways:
+  # 
+  # 1. MULTIPLE TABS: Many servers use multiple tabs between fields, especially for
+  #    informational lines (type 'i'). Example: "iWelcome\t\tNULL\t0\r\n"
+  # 
+  # 2. EMPTY SELECTORS: Informational lines (type 'i') often have empty selectors
+  #    since they are non-selectable display text.
+  # 
+  # 3. DUMMY VALUES: Info lines use placeholder values like "NULL", "error.host",
+  #    or "fake" for selector/host fields, with port often set to 0 or 1.
+  # 
+  # 4. VARIABLE FIELD COUNT: Some servers send fewer than 5 fields for info lines.
+  # 
+  # PARSING STRATEGY:
+  # This spec makes selector, host, and port OPTIONAL with sensible defaults.
+  # The parser will gracefully handle missing fields by using default values,
+  # making it compatible with 99% of real-world Gopher servers.
+  # 
+  # This approach follows the "Robustness Principle" (Postel's Law):
+  # "Be conservative in what you send, be liberal in what you accept."
+  # ============================================================================
+  - name: DirectoryItem
+    direction: response           # This message is sent by servers
+    format: "{itemType}{display}\t{selector}\t{host}\t{port}\r\n"
+    delimiter: "\t"               # Field separator (tab character)
+    terminator: "\r\n"            # Line ending (CRLF)
+    fields:
+      - name: itemType            # Single character indicating item type
+        type:
+          kind: enum              # Enumerated type with fixed valid values
+          values:
+            - "0"                 # Text file
+            - "1"                 # Directory/submenu
+            - "3"                 # Error message
+            - "7"                 # Search/query
+            - "9"                 # Binary file
+            - "g"                 # GIF image
+            - "I"                 # Image file (other formats)
+            - "h"                 # HTML document
+            - "i"                 # Informational text (non-selectable)
+        required: true
+      - name: display             # Human-readable display text
+        type: string
+        required: true
+      - name: selector            # Path/identifier (empty for type 'i' info lines)
+        type: string
+        required: false           # OPTIONAL: Real servers often omit this for info lines
+        defaultValue: ""          # Default to empty string (RFC-compliant for info lines)
+      - name: host                # Hostname (dummy value for type 'i' info lines)
+        type: string
+        required: false           # OPTIONAL: Real servers use dummy values for info lines
+        defaultValue: "error.host" # Common dummy value used by many servers
+      - name: port                # Port number (dummy value for type 'i' info lines)
+        type: number
+        required: false           # OPTIONAL: Real servers use 0 or 1 for info lines
+        defaultValue: 1           # Default to 1 (common dummy value)
+        validation:
+          min: 0                  # Allow 0 for dummy values
+          max: 65535              # Maximum valid port
+
+# ----------------------------------------------------------------------------
+# Type Definitions
+# ----------------------------------------------------------------------------
+# Defines custom types (enums, structs) used in the protocol.
+# These generate TypeScript enums and interfaces in the implementation.
+types:
+  - name: GopherItemType          # Name of the generated enum
+    kind: enum                    # Type kind: enum or struct
+    values:
+      - name: TextFile            # Enum member name (PascalCase)
+        value: "0"                # Actual protocol value
+        description: Plain text file
+      - name: Directory
+        value: "1"
+        description: Directory/menu
+      - name: Error
+        value: "3"
+        description: Error message
+      - name: Search
+        value: "7"
+        description: Search query
+      - name: Binary
+        value: "9"
+        description: Binary file
+      - name: GIF
+        value: "g"
+        description: GIF image
+      - name: Image
+        value: "I"
+        description: Image file
+      - name: HTML
+        value: "h"
+        description: HTML document
+      - name: Info
+        value: "i"
+        description: Informational text (non-selectable)
+
+# ----------------------------------------------------------------------------
+# Error Handling Configuration
+# ----------------------------------------------------------------------------
+# Defines how the generated implementation handles errors.
+errorHandling:
+  onParseError: return            # return: Return error object, throw: Throw exception
+  onNetworkError: retry           # retry: Retry with backoff, return: Return error, throw: Throw
+  retryAttempts: 3                # Number of retry attempts for network errors
+  retryDelay: 1000                # Initial delay between retries (milliseconds)
