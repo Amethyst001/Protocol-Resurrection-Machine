@@ -1,2 +1,5 @@
+packages:
+  - 'workbench'
+
 onlyBuiltDependencies:
   - esbuild
