@@ -99,18 +99,38 @@ function createAnimationQueue() {
 		},
 
 		animateEdge(edgeId: string, duration: number, direction?: string) {
-			// Implementation will animate edge with traveling gradient
-			const element = document.querySelector(`[data-edge-id="${edgeId}"]`);
-			if (element) {
-				requestAnimationFrame(() => {
-					element.classList.add('animate-edge-flow');
-					if (direction === 'backward') {
-						element.classList.add('reverse');
-					}
-					setTimeout(() => {
-						element.classList.remove('animate-edge-flow', 'reverse');
-					}, duration);
-				});
+			// Target the actual path element within the edge
+			const edgeElement = document.querySelector(`[data-edge-id="${edgeId}"]`) as HTMLElement;
+			if (edgeElement) {
+				// Find the path element within the edge
+				const pathElement = edgeElement.querySelector('path') as SVGPathElement;
+				if (pathElement) {
+					requestAnimationFrame(() => {
+						// Add class to parent for arrowhead styling
+						edgeElement.classList.add('animate-edge-active');
+						pathElement.classList.add('animate-edge-flow');
+						if (direction === 'backward') {
+							pathElement.classList.add('reverse');
+						}
+						setTimeout(() => {
+							edgeElement.classList.remove('animate-edge-active');
+							pathElement.classList.remove('animate-edge-flow', 'reverse');
+							// Restore original stroke properties
+							const originalStroke = pathElement.getAttribute('data-original-stroke');
+							const originalStrokeWidth = pathElement.getAttribute('data-original-stroke-width');
+							if (originalStroke) {
+								pathElement.setAttribute('stroke', originalStroke);
+							}
+							if (originalStrokeWidth) {
+								pathElement.setAttribute('stroke-width', originalStrokeWidth);
+							}
+							// Clear inline styles
+							pathElement.style.filter = '';
+							pathElement.style.strokeDasharray = '';
+							pathElement.style.strokeDashoffset = '';
+						}, duration);
+					});
+				}
 			}
 		},
 

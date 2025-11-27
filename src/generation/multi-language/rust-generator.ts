@@ -701,9 +701,41 @@ ${serializeLogic}
               lines.push(`        result.extend_from_slice(msg.${fieldName}.to_string().as_bytes());`);
             } else if (fieldType === 'boolean') {
               lines.push(`        result.extend_from_slice(if msg.${fieldName} { b"true" } else { b"false" });`);
+            } else if (fieldType === 'bytes') {
+              lines.push(`        result.extend_from_slice(&msg.${fieldName});`);
             } else {
               lines.push(`        result.extend_from_slice(msg.${fieldName}.as_bytes());`);
             }
+          }
+          break;
+
+        case 'optional':
+          const optField = messageType.fields.find((f: any) => f.name === token.fieldName);
+          if (optField) {
+            const fieldName = toSnakeCase(optField.name);
+            const fieldType = optField.type?.kind || optField.type;
+
+            lines.push(`        if let Some(ref val) = msg.${fieldName} {`);
+            if (token.optionalPrefix) {
+              const escapedPrefix = escapeDelimiter(token.optionalPrefix);
+              lines.push(`            result.extend_from_slice(b"${escapedPrefix}");`);
+            }
+
+            if (fieldType === 'integer' || fieldType === 'number') {
+              lines.push(`            result.extend_from_slice(val.to_string().as_bytes());`);
+            } else if (fieldType === 'boolean') {
+              lines.push(`            result.extend_from_slice(if *val { b"true" } else { b"false" });`);
+            } else if (fieldType === 'bytes') {
+              lines.push(`            result.extend_from_slice(val);`);
+            } else {
+              lines.push(`            result.extend_from_slice(val.as_bytes());`);
+            }
+
+            if (token.optionalSuffix) {
+              const escapedSuffix = escapeDelimiter(token.optionalSuffix);
+              lines.push(`            result.extend_from_slice(b"${escapedSuffix}");`);
+            }
+            lines.push(`        }`);
           }
           break;
       }

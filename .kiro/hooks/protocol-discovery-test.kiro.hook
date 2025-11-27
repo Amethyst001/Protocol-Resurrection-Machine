@@ -1,0 +1,13 @@
+{
+  "enabled": true,
+  "name": "Test Protocol Discovery",
+  "description": "Tests protocol discovery against known protocol servers (Gopher, Finger) to validate discovery accuracy",
+  "version": "1",
+  "when": {
+    "type": "userTriggered"
+  },
+  "then": {
+    "type": "runCommand",
+    "command": "npm run test:discovery"
+  }
+}

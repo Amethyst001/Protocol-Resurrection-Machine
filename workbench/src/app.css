@@ -1,5 +1,8 @@
 @import "tailwindcss";
 
+/* Tailwind v4 dark mode configuration */
+@custom-variant dark (&:where(.dark, .dark *));
+
 /* ============================================
    THEME SYSTEM - CSS Variables
    Supports: Halloween/Pro themes + Light/Dark modes
@@ -155,22 +158,44 @@
   animation: haunted-flicker 4s infinite;
 }
 
-/* Halloween Theme - Light Mode */
+/* ============================================
+   LIGHT MODE - Engineering Blueprint Aesthetic
+   Clean, professional, modern light theme
+   ============================================ */
 :root[data-mode="light"] {
-  --bg-primary: white;
-  --bg-secondary: rgb(243 244 246);
-  --bg-tertiary: rgb(229 231 235);
+  /* Main canvas background - Slate 50 */
+  --bg-app: #F8FAFC;
+  /* Panels, cards, editor - Pure White */
+  --bg-panel: #FFFFFF;
+  --bg-primary: #F8FAFC;
+  --bg-secondary: #FFFFFF;
+  --bg-tertiary: #F1F5F9;
 
-  --text-primary: rgb(17 24 39);
-  --text-secondary: rgb(55 65 81);
-  --text-tertiary: rgb(107 114 128);
+  /* High contrast text - Slate 900 */
+  --text-primary: #0F172A;
+  /* Descriptions and metadata - Slate 500 */
+  --text-secondary: #64748B;
+  /* Muted text - Slate 400 */
+  --text-tertiary: #94A3B8;
 
-  --border-primary: rgb(209 213 219);
-  --border-secondary: rgb(229 231 235);
+  /* Crisp separation lines - Slate 200 */
+  --border-primary: #E2E8F0;
+  --border-secondary: #E2E8F0;
+  --border-color: #E2E8F0;
 
-  --scrollbar-track: rgb(243 244 246);
-  --scrollbar-thumb: rgb(156 163 175);
-  --scrollbar-thumb-hover: rgb(107 114 128);
+  /* Empty state icons - Slate 300 */
+  --icon-muted: #CBD5E1;
+
+  /* Scrollbar styling for light mode */
+  --scrollbar-track: #F1F5F9;
+  --scrollbar-thumb: #CBD5E1;
+  --scrollbar-thumb-hover: #94A3B8;
+
+  /* Status colors adjusted for light mode */
+  --status-success: #16A34A;
+  --status-warning: #CA8A04;
+  --status-error: #DC2626;
+  --status-info: #2563EB;
 }
 
 /* Pro Theme - Dark Mode */
@@ -531,10 +556,13 @@ html[data-mode="light"] {
 
 /* Node pulse animation with glow effect */
 @keyframes pulse-glow {
-  0%, 100% {
+
+  0%,
+  100% {
     filter: drop-shadow(0 0 0 transparent);
     transform: scale(1) translateZ(0);
   }
+
   50% {
     filter: drop-shadow(0 0 8px rgba(59, 130, 246, 0.8));
     transform: scale(1.05) translateZ(0);
@@ -546,6 +574,7 @@ html[data-mode="light"] {
   from {
     stroke-dashoffset: 0;
   }
+
   to {
     stroke-dashoffset: -15;
   }
@@ -573,17 +602,88 @@ html[data-mode="light"] {
 
 /* Respect reduced motion preference */
 @media (prefers-reduced-motion: reduce) {
+
   .animate-pulse-glow,
   .animate-edge-flow {
     animation: none !important;
     filter: none !important;
     transform: none !important;
   }
-  
+
   /* Also disable existing topology animations */
   .active-node,
   .active-pulse {
     animation: none !important;
     filter: none !important;
   }
+}
+
+/* ============================================
+   LIGHT MODE UTILITY OVERRIDES
+   Engineering Blueprint Aesthetic
+   ============================================ */
+
+/* Light mode panel backgrounds */
+[data-mode="light"] .panel,
+html:not(.dark) .panel {
+  background-color: #ffffff;
+  border-color: #e2e8f0;
+}
+
+[data-mode="light"] .panel-header,
+html:not(.dark) .panel-header {
+  background-color: #f8fafc;
+  border-color: #e2e8f0;
+  color: #64748b;
+}
+
+/* Light mode code blocks - keep dark for contrast */
+[data-mode="light"] .code-block,
+html:not(.dark) .code-block {
+  background-color: #1e293b;
+  color: #e2e8f0;
+  border-color: #334155;
+}
+
+[data-mode="light"] pre code,
+html:not(.dark) pre code {
+  color: #e2e8f0;
+}
+
+/* Light mode empty states */
+[data-mode="light"] .empty-state-icon,
+html:not(.dark) .empty-state-icon {
+  color: #cbd5e1;
+}
+
+[data-mode="light"] .empty-state-title,
+html:not(.dark) .empty-state-title {
+  color: #64748b;
+}
+
+[data-mode="light"] .empty-state-subtitle,
+html:not(.dark) .empty-state-subtitle {
+  color: #94a3b8;
+}
+
+/* Light mode borders */
+[data-mode="light"] .border-gray-200,
+html:not(.dark) .border-gray-200 {
+  border-color: #e2e8f0;
+}
+
+/* Light mode scrollbars */
+[data-mode="light"] ::-webkit-scrollbar-track,
+html:not(.dark) ::-webkit-scrollbar-track {
+  background-color: #f1f5f9;
+}
+
+[data-mode="light"] ::-webkit-scrollbar-thumb,
+html:not(.dark) ::-webkit-scrollbar-thumb {
+  background-color: #cbd5e1;
+}
+
+[data-mode="light"] ::-webkit-scrollbar-thumb:hover,
+html:not(.dark) ::-webkit-scrollbar-thumb:hover {
+  background-color: #94a3b8;
 }

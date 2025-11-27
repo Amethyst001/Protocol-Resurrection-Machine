@@ -1,0 +1,16 @@
+{
+  "enabled": true,
+  "name": "Auto-Sync Documentation",
+  "description": "Automatically regenerates documentation when protocol specs change",
+  "version": "1",
+  "when": {
+    "type": "fileEdited",
+    "patterns": [
+      "protocols/**/*.yaml"
+    ]
+  },
+  "then": {
+    "type": "askAgent",
+    "prompt": "The protocol specification {{filePath}} was modified. Please regenerate the documentation for this protocol to ensure it stays in sync. Check if:\n1. Message types changed (added/removed/modified)\n2. Fields changed (added/removed/modified)\n3. Constraints changed\n4. Connection parameters changed\nThen update the generated README, API docs, and examples accordingly."
+  }
+}

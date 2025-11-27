@@ -25,7 +25,7 @@ export interface FormattedLogEntry {
 }
 
 function createConsoleStore() {
-	const { subscribe, update } = writable<ConsoleEntry[]>([]);
+	const { subscribe, update, set } = writable<ConsoleEntry[]>([]);
 
 	return {
 		subscribe,
@@ -38,7 +38,10 @@ function createConsoleStore() {
 				suggestion
 			}]);
 		},
-		clear: () => update(() => [])
+		// Clear just removes visible entries but keeps the store
+		clear: () => update(() => []),
+		// Reset completely resets the console to initial state
+		reset: () => set([])
 	};
 }
 

@@ -265,6 +265,16 @@ export class YAMLParser {
                 // Check E: Keyword Safety (The "Silent Killer")
                 if (msg.fields && Array.isArray(msg.fields)) {
                     for (const field of msg.fields) {
+                        if (!field.name) {
+                            errors.push({
+                                severity: 'CRITICAL',
+                                message: `Field definition in message '${msgName}' is missing a 'name' property.`,
+                                suggestion: 'Add "name: field_name"'
+                            });
+                            score -= 50;
+                            continue;
+                        }
+
                         if (reservedKeywords.includes(field.name)) {
                             errors.push({
                                 severity: 'CRITICAL',

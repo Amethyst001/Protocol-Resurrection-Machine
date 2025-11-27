@@ -10,5 +10,8 @@ export default defineConfig({
 			'vscode-jsonrpc',
 			'@chevrotain/regexp-to-ast'
 		]
+	},
+	ssr: {
+		noExternal: ['@xyflow/svelte']
 	}
 });

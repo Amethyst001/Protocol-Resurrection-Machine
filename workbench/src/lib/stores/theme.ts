@@ -35,13 +35,14 @@ if (browser) {
 }
 
 // Persist theme changes to localStorage and apply to DOM
-if (browser) {
-	theme.subscribe(value => {
-		localStorage.setItem('theme', value);
-		document.documentElement.classList.remove('light', 'dark');
-		document.documentElement.classList.add(value);
-	});
-}
+// NOTE: This is now handled by src/lib/utils/theme.ts to avoid conflicts
+// if (browser) {
+// 	theme.subscribe(value => {
+// 		localStorage.setItem('theme', value);
+// 		document.documentElement.classList.remove('light', 'dark');
+// 		document.documentElement.classList.add(value);
+// 	});
+// }
 
 
 

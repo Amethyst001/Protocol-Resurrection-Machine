@@ -1,0 +1,13 @@
+{
+  "enabled": true,
+  "name": "Track Implementation Progress",
+  "description": "Tracks which tasks have been completed and suggests next steps, helping maintain momentum during development.",
+  "version": "1",
+  "when": {
+    "type": "userTriggered"
+  },
+  "then": {
+    "type": "askAgent",
+    "prompt": "Please analyze the current implementation progress:\n1. Check `.kiro/specs/protocol-resurrection-machine/tasks.md` for completed tasks (marked with [x])\n2. Identify which phase we're in (Foundation, Code Generation, Polish, etc.)\n3. List the next 2-3 tasks that should be tackled\n4. Highlight any blockers or dependencies\n5. Estimate completion percentage\nProvide a brief progress summary with actionable next steps."
+  }
+}

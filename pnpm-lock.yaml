@@ -72,6 +72,9 @@ importers:
       '@codemirror/lang-yaml':
         specifier: ^6.1.2
         version: 6.1.2
+      '@codemirror/language':
+        specifier: ^6.11.3
+        version: 6.11.3
       '@codemirror/lint':
         specifier: ^6.9.2
         version: 6.9.2
@@ -84,6 +87,12 @@ importers:
       '@codemirror/view':
         specifier: ^6.38.8
         version: 6.38.8
+      '@lezer/highlight':
+        specifier: ^1.2.3
+        version: 1.2.3
+      '@xyflow/svelte':
+        specifier: ^1.4.2
+        version: 1.4.2(svelte@5.43.14)
       adm-zip:
         specifier: ^0.5.16
         version: 0.5.16
@@ -776,6 +785,11 @@ packages:
   '@standard-schema/spec@1.0.0':
     resolution: {integrity: sha512-m2bOd0f2RT9k8QJx1JN85cZYyH1RqFBdlwtkSlf4tBDYLCiiZnv1fIIwacK6cqwXavOydf0NPToMQgpKq+dVlA==}
 
+  '@svelte-put/shortcut@4.1.0':
+    resolution: {integrity: sha512-wImNEIkbxAIWFqlfuhcbC+jRPDeRa/uJGIXHMEVVD+jqL9xCwWNnkGQJ6Qb2XVszuRLHlb8SGZDL3Io/h3vs8w==}
+    peerDependencies:
+      svelte: ^5.1.0
+
   '@sveltejs/acorn-typescript@1.0.7':
     resolution: {integrity: sha512-znp1A/Y1Jj4l/Zy7PX5DZKBE0ZNY+5QBngiE21NJkfSTyzzC5iKNWOtwFXKtIrn7MXEFBck4jD95iBNkGjK92Q==}
     peerDependencies:
@@ -1129,6 +1143,14 @@ packages:
 
   '@vitest/utils@4.0.10':
     resolution: {integrity: sha512-kOuqWnEwZNtQxMKg3WmPK1vmhZu9WcoX69iwWjVz+jvKTsF1emzsv3eoPcDr6ykA3qP2bsCQE7CwqfNtAVzsmg==}
+
+  '@xyflow/svelte@1.4.2':
+    resolution: {integrity: sha512-E6mw8wt3NXS5imGJLWKrdOEOGHAkbFhsVwzb9MPG8ohkPjQ8lMeDM9o3fBSoDNp7xr16s7Q3AOVS2JzVyoY2og==}
+    peerDependencies:
+      svelte: ^5.25.0
+
+  '@xyflow/system@0.0.73':
+    resolution: {integrity: sha512-C2ymH2V4mYDkdVSiRx0D7R0s3dvfXiupVBcko6tXP5K4tVdSBMo22/e3V9yRNdn+2HQFv44RFKzwOyCcUUDAVQ==}
 
   acorn-jsx@5.3.2:
     resolution: {integrity: sha512-rq9s+JNhf0IChjtDXxllJ7g41oZk5SlXtp0LHwyA5cejwn7vKmKp4pPri6YEePv2PU65sAsegbXtIinmDFDXgQ==}
@@ -3046,6 +3068,10 @@ snapshots:
 
   '@standard-schema/spec@1.0.0': {}
 
+  '@svelte-put/shortcut@4.1.0(svelte@5.43.14)':
+    dependencies:
+      svelte: 5.43.14
+
   '@sveltejs/acorn-typescript@1.0.7(acorn@8.15.0)':
     dependencies:
       acorn: 8.15.0
@@ -3467,6 +3493,24 @@ snapshots:
     dependencies:
       '@vitest/pretty-format': 4.0.10
       tinyrainbow: 3.0.3
+
+  '@xyflow/svelte@1.4.2(svelte@5.43.14)':
+    dependencies:
+      '@svelte-put/shortcut': 4.1.0(svelte@5.43.14)
+      '@xyflow/system': 0.0.73
+      svelte: 5.43.14
+
+  '@xyflow/system@0.0.73':
+    dependencies:
+      '@types/d3-drag': 3.0.7
+      '@types/d3-interpolate': 3.0.4
+      '@types/d3-selection': 3.0.11
+      '@types/d3-transition': 3.0.9
+      '@types/d3-zoom': 3.0.8
+      d3-drag: 3.0.0
+      d3-interpolate: 3.0.1
+      d3-selection: 3.0.0
+      d3-zoom: 3.0.0
 
   acorn-jsx@5.3.2(acorn@8.15.0):
     dependencies:

@@ -3,34 +3,28 @@
   import { currentTheme } from '$lib/stores/theme';
   import { spec } from '$lib/stores/spec';
   import { toast } from '$lib/stores/toast';
+  import { consoleStore } from '$lib/stores/console';
   import { slide } from 'svelte/transition';
 
   let showCode = false;
 
   async function handleGenerateMCP() {
-    console.log('[MCP] Generate button clicked');
-    console.log('[MCP] Current spec:', $spec);
-
     mcp.setGenerating(true);
     try {
-      console.log('[MCP] Sending request to /api/mcp/generate');
       const response = await fetch('/api/mcp/generate', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ yaml: $spec }),
       });
 
-      console.log('[MCP] Response status:', response.status);
-      console.log('[MCP] Response ok:', response.ok);
-
       if (!response.ok) {
         const errorText = await response.text();
-        console.error('[MCP] Error response:', errorText);
+        consoleStore.log(`[MCP] Error: ${response.status} ${errorText}`, 'error');
         throw new Error(`Failed to generate MCP server: ${response.status} ${errorText}`);
       }
 
       const result = await response.json();
-      console.log('[MCP] Generation successful:', result);
+      consoleStore.log(`[MCP] Generation successful! ${result.tools.length} tools created.`, 'success');
 
       mcp.setGeneratedCode(result.code);
       mcp.setStatus({
@@ -42,8 +36,8 @@
       showCode = true;
       toast.success('MCP Server generated successfully');
     } catch (error) {
-      console.error('[MCP] Generation failed:', error);
       const errorMessage = error instanceof Error ? error.message : 'Unknown error';
+      consoleStore.log(`[MCP] Generation failed: ${errorMessage}`, 'error');
       toast.error(`Failed to generate MCP server: ${errorMessage}`);
     } finally {
       mcp.setGenerating(false);
@@ -56,26 +50,28 @@
       toast.success('Code copied to clipboard');
     }
   }
+
+
 </script>
 
-<div class="h-full flex flex-col bg-white dark:bg-slate-900 text-gray-900 dark:text-gray-100">
+<div class="h-full flex flex-col mcp-container">
   <!-- Header -->
   <div
-    class="flex items-center justify-between px-4 py-2 border-b border-gray-200 dark:border-gray-700 bg-gray-50 dark:bg-gray-800/50"
+    class="flex items-center justify-between px-4 py-2 border-b mcp-header"
   >
-    <h2 class="text-sm font-semibold uppercase tracking-wider text-gray-500 dark:text-gray-400">
+    <h2 class="text-sm font-semibold uppercase tracking-wider mcp-header-text">
       Model Context Protocol
     </h2>
     <div class="flex items-center gap-2">
       {#if $mcp.status.isRunning}
         <span
-          class="flex items-center gap-1.5 text-xs text-green-600 dark:text-green-400 font-medium px-2 py-0.5 bg-green-100 dark:bg-green-900/30 rounded-full"
+          class="flex items-center gap-1.5 text-xs font-medium px-2 py-0.5 rounded-full mcp-badge-active"
         >
           <span class="w-1.5 h-1.5 rounded-full bg-green-500 animate-pulse"></span>
           Active
         </span>
       {:else}
-        <span class="text-xs text-gray-500 px-2 py-0.5 bg-gray-100 dark:bg-gray-800 rounded-full">
+        <span class="text-xs px-2 py-0.5 rounded-full mcp-badge-inactive">
           Inactive
         </span>
       {/if}
@@ -83,15 +79,15 @@
   </div>
 
   <!-- Content -->
-  <div class="flex-1 overflow-auto p-4 space-y-6">
+  <div class="flex-1 overflow-auto p-4 space-y-6 mcp-content">
     <!-- Server Status -->
     <div
-      class="bg-white dark:bg-gray-800 rounded-lg p-4 border border-gray-300 dark:border-gray-600 shadow-sm"
+      class="rounded-lg p-4 shadow-sm mcp-card"
     >
       <div class="flex items-center justify-between mb-4">
         <div>
-          <h3 class="font-medium text-lg text-gray-900 dark:text-gray-100">MCP Server</h3>
-          <p class="text-sm text-gray-600 dark:text-gray-400">
+          <h3 class="font-medium text-lg mcp-card-title">MCP Server</h3>
+          <p class="text-sm mcp-card-subtitle">
             Expose this protocol to AI assistants like Claude
           </p>
         </div>
@@ -142,8 +138,18 @@
             </h4>
             <div class="grid gap-2">
               {#each $mcp.status.tools as tool}
-                <div
-                  class="p-2 bg-gray-50 dark:bg-black rounded border border-gray-300 dark:border-gray-700"
+                <button
+                  onclick={() => {
+                    consoleStore.log(`[MCP] Tool: ${tool.name}`, 'info');
+                    if (tool.inputSchema?.properties && Object.keys(tool.inputSchema.properties).length > 0) {
+                      const props = Object.keys(tool.inputSchema.properties).join(', ');
+                      consoleStore.log(`[MCP] Parameters: ${props}`, 'info');
+                    }
+                  }}
+                  class="w-full text-left p-3 bg-gray-50 dark:bg-slate-800 rounded border border-gray-300 dark:border-slate-600 
+                         hover:border-purple-400 dark:hover:border-purple-500 hover:bg-purple-50 dark:hover:bg-purple-900/20
+                         transition-all cursor-pointer"
+                  title={tool.description}
                 >
                   <div class="flex items-center justify-between mb-1">
                     <span class="font-mono text-sm font-medium text-purple-600 dark:text-purple-400"
@@ -151,7 +157,7 @@
                     >
                   </div>
                   <p class="text-xs text-gray-600 dark:text-gray-400">{tool.description}</p>
-                </div>
+                </button>
               {/each}
             </div>
           </div>
@@ -186,21 +192,179 @@
         </div>
         {#if showCode}
           <pre
-            class="p-3 text-xs font-mono overflow-auto max-h-96 bg-gray-50 dark:bg-black text-gray-800 dark:text-gray-200">{$mcp.generatedCode}</pre>
+            class="p-3 text-xs font-mono overflow-auto max-h-96 bg-gray-50 dark:bg-slate-800 text-gray-800 dark:text-gray-200">{$mcp.generatedCode}</pre>
         {/if}
       </div>
-    {:else if $currentTheme === 'halloween'}
+    {:else}
       <div
-        class="flex flex-col items-center justify-center h-48 text-gray-400 text-center border-2 border-dashed border-gray-300 dark:border-gray-700 rounded-lg"
+        class="flex flex-col items-center justify-center h-48 text-center mcp-empty-state border-2 border-dashed rounded-lg"
       >
-        <span class="text-5xl mb-3 block">🔮</span>
-        <p class="text-sm font-semibold text-gray-700 dark:text-gray-400">
-          The crystal ball is cloudy...
-        </p>
-        <p class="text-xs mt-1 text-gray-600 dark:text-gray-500">
-          Invoke "Generate Server" to manifest the protocol
-        </p>
+        {#if $currentTheme === 'halloween'}
+          <span class="text-5xl mb-3 block">🎃</span>
+          <p class="text-sm font-semibold mcp-empty-title">
+            The protocol sleeps...
+          </p>
+          <p class="text-xs mt-1 mcp-empty-subtitle">
+            Click "Generate Server" to awaken it
+          </p>
+        {:else}
+          <svg
+            class="w-12 h-12 mb-3 mcp-empty-icon"
+            fill="none"
+            stroke="currentColor"
+            viewBox="0 0 24 24"
+          >
+            <path
+              stroke-linecap="round"
+              stroke-linejoin="round"
+              stroke-width="2"
+              d="M5 12h14M5 12a2 2 0 01-2-2V6a2 2 0 012-2h14a2 2 0 012 2v4a2 2 0 01-2 2M5 12a2 2 0 00-2 2v4a2 2 0 002 2h14a2 2 0 002-2v-4a2 2 0 00-2-2"
+            />
+          </svg>
+          <p class="text-sm font-semibold mcp-empty-title">
+            No MCP server generated yet
+          </p>
+          <p class="text-xs mt-1 mcp-empty-subtitle">
+            Click "Generate Server" to create an MCP server
+          </p>
+        {/if}
       </div>
     {/if}
   </div>
 </div>
+
+
+<style>
+  /* Light Mode - Engineering Blueprint */
+  .mcp-container {
+    background-color: #ffffff;
+    color: #0f172a;
+  }
+
+  .mcp-header {
+    background-color: #f8fafc;
+    border-color: #e2e8f0;
+  }
+
+  .mcp-header-text {
+    color: #64748b;
+  }
+
+  .mcp-badge-active {
+    background-color: #dcfce7;
+    color: #16a34a;
+  }
+
+  .mcp-badge-inactive {
+    background-color: #f1f5f9;
+    color: #64748b;
+  }
+
+  .mcp-content {
+    background-color: #f8fafc;
+  }
+
+  .mcp-card {
+    background-color: #ffffff;
+    border: 1px solid #e2e8f0;
+  }
+
+  .mcp-card-title {
+    color: #0f172a;
+  }
+
+  .mcp-card-subtitle {
+    color: #64748b;
+  }
+
+  /* Dark Mode */
+  :global(.dark) .mcp-container,
+  :global([data-mode='dark']) .mcp-container {
+    background-color: #0f172a;
+    color: #f1f5f9;
+  }
+
+  :global(.dark) .mcp-header,
+  :global([data-mode='dark']) .mcp-header {
+    background-color: rgba(30, 41, 59, 0.5);
+    border-color: #334155;
+  }
+
+  :global(.dark) .mcp-header-text,
+  :global([data-mode='dark']) .mcp-header-text {
+    color: #94a3b8;
+  }
+
+  :global(.dark) .mcp-badge-active,
+  :global([data-mode='dark']) .mcp-badge-active {
+    background-color: rgba(22, 163, 74, 0.2);
+    color: #4ade80;
+  }
+
+  :global(.dark) .mcp-badge-inactive,
+  :global([data-mode='dark']) .mcp-badge-inactive {
+    background-color: #1e293b;
+    color: #94a3b8;
+  }
+
+  :global(.dark) .mcp-content,
+  :global([data-mode='dark']) .mcp-content {
+    background-color: #0f172a;
+  }
+
+  :global(.dark) .mcp-card,
+  :global([data-mode='dark']) .mcp-card {
+    background-color: #1e293b;
+    border-color: #334155;
+  }
+
+  :global(.dark) .mcp-card-title,
+  :global([data-mode='dark']) .mcp-card-title {
+    color: #f1f5f9;
+  }
+
+  :global(.dark) .mcp-card-subtitle,
+  :global([data-mode='dark']) .mcp-card-subtitle {
+    color: #94a3b8;
+  }
+
+  /* Empty State - Light Mode */
+  .mcp-empty-state {
+    background-color: #f8fafc;
+    border-color: #e2e8f0;
+  }
+
+  .mcp-empty-icon {
+    color: #cbd5e1;
+  }
+
+  .mcp-empty-title {
+    color: #64748b;
+  }
+
+  .mcp-empty-subtitle {
+    color: #94a3b8;
+  }
+
+  /* Empty State - Dark Mode */
+  :global(.dark) .mcp-empty-state,
+  :global([data-mode='dark']) .mcp-empty-state {
+    background-color: #1e293b;
+    border-color: #334155;
+  }
+
+  :global(.dark) .mcp-empty-icon,
+  :global([data-mode='dark']) .mcp-empty-icon {
+    color: #475569;
+  }
+
+  :global(.dark) .mcp-empty-title,
+  :global([data-mode='dark']) .mcp-empty-title {
+    color: #94a3b8;
+  }
+
+  :global(.dark) .mcp-empty-subtitle,
+  :global([data-mode='dark']) .mcp-empty-subtitle {
+    color: #64748b;
+  }
+</style>

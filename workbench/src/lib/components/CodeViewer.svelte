@@ -1,23 +1,27 @@
 <script lang="ts">
-  import { onMount } from 'svelte';
-  import TopologyDiagram from './TopologyDiagram.svelte';
-
-  export let code: {
-    typescript?: string;
-    python?: string;
-    go?: string;
-    rust?: string;
-  } = {};
-  export let selectedLanguage: 'typescript' | 'python' | 'go' | 'rust' | 'topology' = 'typescript';
-  export let protocolName: string = 'demo';
-  export let activeNode: 'typescript' | 'python' | 'go' | 'rust' | undefined = undefined;
-
-  // Auto-switch to topology when node becomes active
-  $: if (activeNode && selectedLanguage !== 'topology') {
-    selectedLanguage = 'topology';
-  }
+  import { toast } from '$lib/stores/toast';
+  import { currentTheme } from '$lib/stores/theme';
+  import ModernTopology from './topology/ModernTopology.svelte';
 
   type Language = 'typescript' | 'python' | 'go' | 'rust' | 'topology';
+
+  let {
+    code,
+    selectedLanguage = $bindable('typescript'),
+    protocolName = 'Protocol',
+    activeNode = null,
+    onsimulate,
+    onsimulationend,
+    autoStartSimulation = false,
+  }: {
+    code: { [key: string]: string | undefined };
+    selectedLanguage?: Language;
+    protocolName?: string;
+    activeNode?: string | null;
+    onsimulate?: () => void;
+    onsimulationend?: () => void;
+    autoStartSimulation?: boolean;
+  } = $props();
 
   const languages: { id: Language; name: string; ext: string; icon?: string }[] = [
     { id: 'typescript', name: 'TypeScript', ext: 'ts' },
@@ -26,9 +30,6 @@
     { id: 'rust', name: 'Rust', ext: 'rs' },
     { id: 'topology', name: 'Topology', ext: '' }, // Removed icon
   ];
-
-  import { toast } from '$lib/stores/toast';
-  import { currentTheme } from '$lib/stores/theme';
 
   function copyToClipboard() {
     if (selectedLanguage === 'topology') return;
@@ -117,43 +118,53 @@
       const regex = new RegExp(`\\b(${keyword})\\b`, 'g');
       text = text.replace(
         regex,
-        '<span class="text-purple-600 dark:text-purple-400 font-semibold">$1</span>'
+        '<span data-hl-class="text-purple-600 dark:text-purple-400 font-semibold">$1</span>'
       );
     });
 
     text = text.replace(
       /"([^"]*)"/g,
-      '<span class="text-green-600 dark:text-green-400">"$1"</span>'
+      '<span data-hl-class="text-green-600 dark:text-green-400">"$1"</span>'
     );
     text = text.replace(
       /'([^']*)'/g,
-      '<span class="text-green-600 dark:text-green-400">\'$1\'</span>'
+      '<span data-hl-class="text-green-600 dark:text-green-400">\'$1\'</span>'
     );
     text = text.replace(
       /\b(\d+\.?\d*)\b/g,
-      '<span class="text-orange-600 dark:text-orange-400">$1</span>'
+      '<span data-hl-class="text-orange-600 dark:text-orange-400">$1</span>'
     );
     text = text.replace(
       /\/\/(.*?)$/gm,
-      '<span class="text-gray-500 dark:text-gray-500 italic">//$1</span>'
+      '<span data-hl-class="text-gray-500 dark:text-gray-500 italic">//$1</span>'
     );
     text = text.replace(
       /#(.*?)$/gm,
-      '<span class="text-gray-500 dark:text-gray-500 italic">#$1</span>'
+      '<span data-hl-class="text-gray-500 dark:text-gray-500 italic">#$1</span>'
     );
     text = text.replace(
       /\b([A-Z][a-zA-Z0-9]*)\b/g,
-      '<span class="text-blue-600 dark:text-blue-400">$1</span>'
+      '<span data-hl-class="text-blue-600 dark:text-blue-400">$1</span>'
     );
 
-    return text;
+    // Restore class attribute
+    return text.replace(/data-hl-class/g, 'class');
   }
 
-  $: currentCode =
-    selectedLanguage !== 'topology' ? code[selectedLanguage as keyof typeof code] || '' : '';
-  $: highlightedCode =
-    selectedLanguage !== 'topology' ? highlightCode(currentCode, selectedLanguage) : '';
-  $: hasCode = Object.values(code).some((c) => c && c.length > 0);
+  // Auto-switch to topology when node becomes active
+  $effect(() => {
+    if (activeNode && selectedLanguage !== 'topology') {
+      selectedLanguage = 'topology';
+    }
+  });
+
+  let currentCode = $derived(
+    selectedLanguage !== 'topology' ? code[selectedLanguage as keyof typeof code] || '' : ''
+  );
+  let highlightedCode = $derived(
+    selectedLanguage !== 'topology' ? highlightCode(currentCode, selectedLanguage) : ''
+  );
+  let hasCode = $derived(Object.values(code).some((c) => c && c.length > 0));
 </script>
 
 <div class="code-viewer-container flex flex-col h-full bg-white dark:bg-slate-900">
@@ -250,18 +261,18 @@
     {#if selectedLanguage === 'topology' && hasCode}
       <!-- Topology Diagram View -->
       <div class="h-full w-full">
-        <TopologyDiagram />
+        <ModernTopology {onsimulate} {onsimulationend} autoStart={autoStartSimulation} />
       </div>
     {:else if !hasCode || (selectedLanguage === 'topology' && !hasCode)}
-      <div class="flex items-center justify-center h-full w-full text-gray-500 dark:text-gray-400">
+      <div class="flex items-center justify-center h-full w-full">
         <div
-          class="text-center bg-gray-50 dark:bg-gray-800 border-2 border-dashed border-gray-300 dark:border-gray-700 rounded-lg px-12 py-16 max-w-md w-full"
+          class="text-center code-empty-state border-2 border-dashed rounded-lg px-12 py-16 max-w-md w-full"
         >
           {#if $currentTheme === 'halloween'}
             <span class="text-6xl mb-4 block">👻</span>
           {:else}
             <svg
-              class="w-16 h-16 mx-auto mb-4 text-gray-400 dark:text-gray-600"
+              class="w-16 h-16 mx-auto mb-4 code-empty-icon"
               fill="none"
               stroke="currentColor"
               viewBox="0 0 24 24"
@@ -274,10 +285,10 @@
               />
             </svg>
           {/if}
-          <p class="text-sm font-semibold text-gray-700 dark:text-gray-400">
+          <p class="text-sm font-semibold code-empty-title">
             {$currentTheme === 'halloween' ? 'The graveyard is silent...' : 'No code generated yet'}
           </p>
-          <p class="text-xs mt-2 text-gray-600 dark:text-gray-500">
+          <p class="text-xs mt-2 code-empty-subtitle">
             {$currentTheme === 'halloween'
               ? 'Resurrect a protocol to begin'
               : 'Click the Generate button to create code'}
@@ -298,43 +309,90 @@
 </div>
 
 <style>
+  /* Light Mode - Engineering Blueprint */
   .code-viewer-container {
     background: #ffffff;
   }
 
   .code-viewer-output {
-    background: #ffffff;
+    background: #f8fafc;
   }
 
+  /* Code blocks stay dark for contrast in light mode */
   .code-block {
     margin: 0;
     padding: 1.5rem;
     white-space: pre-wrap;
     word-wrap: break-word;
-    background: #f9fafb;
-    border: 1px solid #e5e7eb;
+    background: #1e293b;
+    border: 1px solid #334155;
+    border-radius: 0.5rem;
   }
 
   code {
     display: block;
-    color: #1f2937;
+    color: #e2e8f0;
     line-height: 1.6;
   }
 
-  :global(.dark) .code-viewer-container {
+  /* Empty state - Light Mode */
+  .code-empty-state {
+    background-color: #f8fafc;
+    border-color: #e2e8f0;
+  }
+
+  .code-empty-icon {
+    color: #cbd5e1;
+  }
+
+  .code-empty-title {
+    color: #64748b;
+  }
+
+  .code-empty-subtitle {
+    color: #94a3b8;
+  }
+
+  /* Dark Mode */
+  :global(.dark) .code-viewer-container,
+  :global([data-mode='dark']) .code-viewer-container {
     background: #0f172a;
   }
 
-  :global(.dark) .code-viewer-output {
+  :global(.dark) .code-viewer-output,
+  :global([data-mode='dark']) .code-viewer-output {
     background: #0f172a;
   }
 
-  :global(.dark) .code-block {
+  :global(.dark) .code-block,
+  :global([data-mode='dark']) .code-block {
     background: #0d1117;
     border-color: #30363d;
   }
 
-  :global(.dark) code {
+  :global(.dark) code,
+  :global([data-mode='dark']) code {
     color: #e6edf3;
+  }
+
+  :global(.dark) .code-empty-state,
+  :global([data-mode='dark']) .code-empty-state {
+    background-color: #1e293b;
+    border-color: #334155;
+  }
+
+  :global(.dark) .code-empty-icon,
+  :global([data-mode='dark']) .code-empty-icon {
+    color: #475569;
+  }
+
+  :global(.dark) .code-empty-title,
+  :global([data-mode='dark']) .code-empty-title {
+    color: #94a3b8;
+  }
+
+  :global(.dark) .code-empty-subtitle,
+  :global([data-mode='dark']) .code-empty-subtitle {
+    color: #64748b;
   }
 </style>

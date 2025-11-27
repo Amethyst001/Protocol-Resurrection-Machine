@@ -1,0 +1,13 @@
+{
+  "enabled": true,
+  "name": "Multi-Language Compilation Check",
+  "description": "Verifies that generated code compiles in all target languages (TypeScript, Python, Go, Rust) to ensure code validity across the entire multi-language ecosystem",
+  "version": "1",
+  "when": {
+    "type": "userTriggered"
+  },
+  "then": {
+    "type": "runCommand",
+    "command": "npm run check:multi-language"
+  }
+}

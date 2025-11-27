@@ -356,59 +356,6 @@ export class StateMachineParserGenerator {
 		lines.push(` 	}`);
 		lines.push(``);
 
-		lines.push(` 	/**`);
-		lines.push(` 	 * Execute EXTRACT_FIELD state`);
-		lines.push(` 	 */`);
-		lines.push(` 	private executeExtractFieldState(state: State, context: ExecutionContext): ParseResult<any> {`);
-		lines.push(` 	 	if (!state.action || !state.action.target) {`);
-		lines.push(` 	 	 	return this.createError(`);
-		lines.push(` 	 	 	 	'EXTRACT_FIELD state missing target field',`);
-		lines.push(` 	 	 	 	state.id,`);
-		lines.push(` 	 	 	 	context.offset,`);
-		lines.push(` 	 	 	 	'target field',`);
-		lines.push(` 	 	 	 	'none',`);
-		lines.push(` 	 	 	 	context.stateHistory`);
-		lines.push(` 	 	 	);`);
-		lines.push(` 	 	}`);
-		lines.push(``);
-		lines.push(` 	 	const fieldName = state.action.target;`);
-		lines.push(` 	 	const fieldType = state.metadata?.fieldType || 'string';`);
-		lines.push(``);
-		lines.push(` 	 	// Find the end of the field value`);
-		lines.push(` 	 	// This depends on what comes next (delimiter, fixed string, or terminator)`);
-		lines.push(` 	 	const endIndex = this.findFieldEnd(state, context);`);
-		lines.push(``);
-		lines.push(` 	 	if (endIndex === -1) {`);
-		lines.push(` 	 	 	return this.createError(`);
-		lines.push(` 	 	 	 	\`Could not find end of field "\${fieldName}"\`,`);
-		lines.push(` 	 	 	 	state.id,`);
-		lines.push(` 	 	 	 	context.offset,`);
-		lines.push(` 	 	 	 	'field boundary',`);
-		lines.push(` 	 	 	 	this.getActualData(context.data, context.offset),`);
-		lines.push(` 	 	 	 	context.stateHistory`);
-		lines.push(` 	 	 	);`);
-		lines.push(` 	 	}`);
-		lines.push(``);
-		lines.push(` 	 	// Extract field value`);
-		lines.push(` 	 	const rawValue = context.data.toString('utf-8', context.offset, endIndex);`);
-		lines.push(``);
-		lines.push(` 	 	// Convert to appropriate type`);
-		lines.push(` 	 	const convertedValue = this.convertFieldValue(rawValue, fieldType, fieldName, state.id, context);`);
-		lines.push(` 	 	if (convertedValue.error) {`);
-		lines.push(` 	 	 	return convertedValue.error;`);
-		lines.push(` 	 	}`);
-		lines.push(``);
-		lines.push(` 	 	// Store field value`);
-		lines.push(` 	 	context.fields.set(fieldName, convertedValue.value);`);
-		lines.push(``);
-		lines.push(` 	 	// Advance offset`);
-		lines.push(` 	 	context.offset = endIndex;`);
-		lines.push(``);
-		lines.push(` 	 	// Transition to next state`);
-		lines.push(` 	 	return this.transitionToNext(state, context);`);
-		lines.push(` 	}`);
-		lines.push(``);
-
 		return lines.join('\n');
 	}
 
@@ -515,9 +462,6 @@ export class StateMachineParserGenerator {
 		return lines.join('\n');
 	}
 
-	/**
-	 * Generate utility methods
-	 */
 	private generateUtilityMethods(): string {
 		const lines: string[] = [];
 

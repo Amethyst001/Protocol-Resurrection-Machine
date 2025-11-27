@@ -177,7 +177,7 @@ export class DocumentationGenerator {
           sectionIndex + section.length,
           nextSectionIndex === -1 ? undefined : nextSectionIndex
         ).trim();
-        
+
         if (!sectionContent) {
           warnings.push(`Empty section: ${sectionName}`);
         }
@@ -361,9 +361,9 @@ export class DocumentationGenerator {
     sections.push('### Basic Usage');
     sections.push('');
     sections.push('```typescript');
-    sections.push(`import { ${spec.protocol.name}Client } from '@prm/generated-${sanitizedName}';`);
+    sections.push(`import { ${this.toPascalCase(spec.protocol.name)}Client } from '@prm/generated-${sanitizedName}';`);
     sections.push('');
-    sections.push(`const client = new ${spec.protocol.name}Client();`);
+    sections.push(`const client = new ${this.toPascalCase(spec.protocol.name)}Client();`);
     sections.push(`await client.connect('host', ${this.getPortWithFallback(spec)});`);
     sections.push('// Use client methods...');
     sections.push('await client.disconnect();');
@@ -428,9 +428,9 @@ export class DocumentationGenerator {
     sections.push('');
     sections.push('### TypeScript');
     sections.push('```typescript');
-    sections.push(`import { ${spec.protocol.name}Parser } from '@prm/generated-${sanitizedName}';`);
+    sections.push(`import { ${this.toPascalCase(spec.protocol.name)}Parser } from '@prm/generated-${sanitizedName}';`);
     sections.push('');
-    sections.push(`const parser = new ${spec.protocol.name}Parser();`);
+    sections.push(`const parser = new ${this.toPascalCase(spec.protocol.name)}Parser();`);
     sections.push('const result = parser.parse(buffer);');
     sections.push('if (result.success) {');
     sections.push('  console.log(result.message);');
@@ -445,9 +445,9 @@ export class DocumentationGenerator {
     sections.push('');
     sections.push('### TypeScript');
     sections.push('```typescript');
-    sections.push(`import { ${spec.protocol.name}Serializer } from '@prm/generated-${sanitizedName}';`);
+    sections.push(`import { ${this.toPascalCase(spec.protocol.name)}Serializer } from '@prm/generated-${sanitizedName}';`);
     sections.push('');
-    sections.push(`const serializer = new ${spec.protocol.name}Serializer();`);
+    sections.push(`const serializer = new ${this.toPascalCase(spec.protocol.name)}Serializer();`);
     sections.push('const result = serializer.serialize(message);');
     sections.push('if (result.success) {');
     sections.push('  console.log(result.data);');
@@ -462,9 +462,9 @@ export class DocumentationGenerator {
     sections.push('');
     sections.push('### TypeScript');
     sections.push('```typescript');
-    sections.push(`import { ${spec.protocol.name}Client } from '@prm/generated-${sanitizedName}';`);
+    sections.push(`import { ${this.toPascalCase(spec.protocol.name)}Client } from '@prm/generated-${sanitizedName}';`);
     sections.push('');
-    sections.push(`const client = new ${spec.protocol.name}Client();`);
+    sections.push(`const client = new ${this.toPascalCase(spec.protocol.name)}Client();`);
     sections.push(`await client.connect('${sanitizedName}.example.com', ${port});`);
     sections.push('');
     sections.push('// Send request');
@@ -554,7 +554,7 @@ export class DocumentationGenerator {
    */
   private generateTypeScriptExample(spec: ProtocolSpec): string {
     const lines: string[] = [];
-    const protocolName = spec.protocol.name;
+    const protocolName = this.toPascalCase(spec.protocol.name);
     const sanitizedName = this.sanitizePackageName(spec.protocol.name);
     const port = this.getPortWithFallback(spec);
 
@@ -595,7 +595,7 @@ export class DocumentationGenerator {
    */
   private generatePythonExample(spec: ProtocolSpec): string {
     const lines: string[] = [];
-    const protocolName = spec.protocol.name;
+    const protocolName = this.toPascalCase(spec.protocol.name);
     const sanitizedName = this.sanitizePackageName(spec.protocol.name);
     const port = this.getPortWithFallback(spec);
 
@@ -637,7 +637,7 @@ export class DocumentationGenerator {
    */
   private generateGoExample(spec: ProtocolSpec): string {
     const lines: string[] = [];
-    const protocolName = spec.protocol.name;
+    const protocolName = this.toPascalCase(spec.protocol.name);
     const sanitizedName = this.sanitizePackageName(spec.protocol.name);
     const port = this.getPortWithFallback(spec);
 
@@ -685,7 +685,7 @@ export class DocumentationGenerator {
    */
   private generateRustExample(spec: ProtocolSpec): string {
     const lines: string[] = [];
-    const protocolName = spec.protocol.name;
+    const protocolName = this.toPascalCase(spec.protocol.name);
     const sanitizedName = this.sanitizePackageName(spec.protocol.name);
     const port = this.getPortWithFallback(spec);
 

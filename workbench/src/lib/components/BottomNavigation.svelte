@@ -8,13 +8,13 @@
 </script>
 
 <nav
-	class="fixed bottom-0 left-0 right-0 w-full h-16 bg-gray-900 border-t border-gray-700 z-50"
+	class="bottom-nav fixed bottom-0 left-0 right-0 w-full h-16 z-50"
 	aria-label="Mobile navigation"
 >
 	<div class="flex justify-around items-center h-full">
 		<button
-			class="flex-1 flex flex-col items-center justify-center h-full transition-colors
-             {$mobileLayout.activeTab === 'editor' ? 'bg-blue-600 text-white' : 'text-gray-400'}"
+			class="bottom-nav-btn flex-1 flex flex-col items-center justify-center h-full transition-colors
+             {$mobileLayout.activeTab === 'editor' ? 'active' : ''}"
 			on:click={() => setActiveTab('editor')}
 			aria-label="Editor tab"
 			aria-current={$mobileLayout.activeTab === 'editor' ? 'page' : undefined}
@@ -31,8 +31,8 @@
 		</button>
 
 		<button
-			class="flex-1 flex flex-col items-center justify-center h-full transition-colors
-             {$mobileLayout.activeTab === 'output' ? 'bg-blue-600 text-white' : 'text-gray-400'}"
+			class="bottom-nav-btn flex-1 flex flex-col items-center justify-center h-full transition-colors
+             {$mobileLayout.activeTab === 'output' ? 'active' : ''}"
 			on:click={() => setActiveTab('output')}
 			aria-label="Output tab"
 			aria-current={$mobileLayout.activeTab === 'output' ? 'page' : undefined}
@@ -49,8 +49,8 @@
 		</button>
 
 		<button
-			class="flex-1 flex flex-col items-center justify-center h-full transition-colors
-             {$mobileLayout.activeTab === 'console' ? 'bg-blue-600 text-white' : 'text-gray-400'}"
+			class="bottom-nav-btn flex-1 flex flex-col items-center justify-center h-full transition-colors
+             {$mobileLayout.activeTab === 'console' ? 'active' : ''}"
 			on:click={() => setActiveTab('console')}
 			aria-label="Console tab"
 			aria-current={$mobileLayout.activeTab === 'console' ? 'page' : undefined}
@@ -67,3 +67,38 @@
 		</button>
 	</div>
 </nav>
+
+<style>
+	/* Light Mode */
+	.bottom-nav {
+		background-color: #ffffff;
+		border-top: 1px solid #e2e8f0;
+	}
+
+	.bottom-nav-btn {
+		color: #64748b;
+	}
+
+	.bottom-nav-btn.active {
+		background-color: #2563eb;
+		color: #ffffff;
+	}
+
+	/* Dark Mode */
+	:global(.dark) .bottom-nav,
+	:global([data-mode='dark']) .bottom-nav {
+		background-color: #1e293b;
+		border-top-color: #334155;
+	}
+
+	:global(.dark) .bottom-nav-btn,
+	:global([data-mode='dark']) .bottom-nav-btn {
+		color: #94a3b8;
+	}
+
+	:global(.dark) .bottom-nav-btn.active,
+	:global([data-mode='dark']) .bottom-nav-btn.active {
+		background-color: #2563eb;
+		color: #ffffff;
+	}
+</style>

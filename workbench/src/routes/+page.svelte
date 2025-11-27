@@ -35,6 +35,7 @@
   let consoleCollapsed = $state(false);
   let scenarioModalOpen = $state(false);
   let selectedLanguage = $state<'typescript' | 'python' | 'go' | 'rust' | 'topology'>('typescript');
+  let autoStartSimulation = $state(false);
 
   function handleViewChange(event: CustomEvent<{ view: string }>) {
     activeView = event.detail.view;
@@ -212,6 +213,8 @@
   let isDiscovering = $state(false);
   let isValidatingCode = $state(false);
   let activeNode: 'typescript' | 'python' | 'go' | 'rust' | undefined = $state(undefined);
+  let consoleComponent = $state<Console>();
+  let simulationStartIndex = $state(0);
 
   // Handle auto-fix
   async function handleAutoFix() {
@@ -262,9 +265,23 @@
           }
         }
       } else {
-        // Already valid or no changes needed
-        toast.info('YAML is already valid or no auto-fix available');
-        consoleStore.log('YAML is already valid', 'info');
+        // No conversion happened. Check if it's actually valid.
+        if (result.valid) {
+          toast.info('YAML is already valid');
+          consoleStore.log('YAML is already valid', 'info');
+        } else {
+          toast.warning('Auto-fix could not resolve all issues.');
+          consoleStore.log('⚠ Auto-fix could not resolve all issues.', 'warning');
+          if (result.diagnostics) {
+            $diagnostics = result.diagnostics;
+            // Log errors
+            result.diagnostics.forEach((d: any) => {
+              if (d.severity === 'CRITICAL') {
+                consoleStore.log(`  ✗ ${d.message}`, 'error');
+              }
+            });
+          }
+        }
       }
     } catch (error) {
       const errorMessage = error instanceof Error ? error.message : 'Unknown error';
@@ -402,84 +419,23 @@
     // Open scenario selection modal
     scenarioModalOpen = true;
   }
-
   async function handleSelectScenario(preset: Preset) {
     // Load the preset
     await handleLoadPreset(preset.yamlFile);
 
-    // Run the simulation
-    await runSimulation();
-  }
+    // Minimize console FIRST
+    $layout.rightTopHeight = 90;
 
-  // Handle Simulation execution
-  async function runSimulation() {
-    isRunningPBT = true;
-    consoleStore.log('Starting network simulation...', 'info');
+    // Wait before switching to topology view
+    setTimeout(() => {
+      selectedLanguage = 'topology';
+    }, 600);
 
-    // Auto-expand console
-    consoleCollapsed = false;
-
-    // Auto-switch to Topology tab
-    selectedLanguage = 'topology';
-
-    try {
-      const response = await fetch('/api/simulate', {
-        method: 'POST',
-      });
-
-      if (!response.ok) {
-        throw new Error(`Simulation failed: ${response.statusText}`);
-      }
-
-      if (!response.body) throw new Error('No response body');
-
-      const reader = response.body.getReader();
-      const decoder = new TextDecoder();
-      let buffer = '';
-
-      while (true) {
-        const { done, value } = await reader.read();
-        if (done) break;
-
-        buffer += decoder.decode(value, { stream: true });
-        const lines = buffer.split('\n');
-        buffer = lines.pop() || '';
-
-        for (const line of lines) {
-          if (!line.trim()) continue;
-
-          try {
-            const data = JSON.parse(line);
-            const message = data.message;
-
-            // Log to console
-            consoleStore.log(message);
-
-            // Parse for topology highlighting
-            const match = message.match(/^\[([A-Z]+)\]/);
-            if (match) {
-              const lang = match[1].toLowerCase();
-              // Map log prefixes to topology node IDs
-              if (lang === 'rust' || lang === 'go' || lang === 'python' || lang === 'typescript') {
-                // Enqueue for smooth animation
-                animationQueue.enqueue(lang);
-              }
-            }
-          } catch (e) {
-            console.error('Failed to parse simulation output:', e);
-          }
-        }
-      }
-
-      toast.success('Simulation completed successfully');
-    } catch (error) {
-      const errorMessage = error instanceof Error ? error.message : 'Unknown error';
-      consoleStore.log(`✗ Simulation failed: ${errorMessage}`, 'error');
-      toast.error(`Simulation failed: ${errorMessage}`);
-    } finally {
-      isRunningPBT = false;
-      activeNode = undefined;
-    }
+    // Trigger auto-start simulation after switch completes
+    autoStartSimulation = false; // Reset first
+    setTimeout(() => {
+      autoStartSimulation = true;
+    }, 1100); // 600ms (switch) + 500ms (buffer)
   }
 
   // Handle protocol discovery
@@ -643,7 +599,9 @@
 
   {#if $isMobile}
     <!-- Mobile Layout: Single pane with bottom navigation -->
-    <div class="h-screen flex flex-col bg-gray-50 dark:bg-gray-900 text-gray-900 dark:text-gray-100">
+    <div
+      class="h-screen flex flex-col bg-[#F8FAFC] dark:bg-slate-900 text-slate-900 dark:text-gray-100"
+    >
       <!-- Toolbar -->
       <div class="flex-none z-10">
         <Toolbar
@@ -691,6 +649,10 @@
                 : $spec.includes('COBOL')
                   ? 'banking'
                   : 'chat'}
+              onsimulationend={() => {
+                autoStartSimulation = false;
+              }}
+              {autoStartSimulation}
             />
           </div>
         {:else if $mobileLayout.activeTab === 'console'}
@@ -706,7 +668,7 @@
   {:else}
     <!-- Desktop Layout: Three-pane split (existing layout) -->
     <div
-      class="workbench h-screen flex flex-col bg-gray-50 dark:bg-gray-900 text-gray-900 dark:text-gray-100 overflow-hidden"
+      class="workbench h-screen flex flex-col bg-[#F8FAFC] dark:bg-slate-900 text-slate-900 dark:text-gray-100 overflow-hidden"
     >
       <!-- Toolbar -->
       <div class="flex-none z-10">
@@ -734,7 +696,7 @@
       </div>
 
       <!-- Main Content Area -->
-      <div class="flex flex-1 min-h-0 bg-gray-50 dark:bg-slate-900">
+      <div class="flex flex-1 min-h-0 bg-[#F8FAFC] dark:bg-slate-900">
         <!-- Activity Bar -->
         <div class="flex-none z-10">
           <ActivityBar {activeView} on:change={handleViewChange} />
@@ -748,9 +710,7 @@
                 {#snippet first()}
                   <div class="h-full flex flex-col">
                     <!-- YAML Editor Header - Modern & Stylish -->
-                    <div
-                      class="flex-none px-6 py-3 bg-gradient-to-r from-blue-50 to-indigo-50 dark:from-slate-800 dark:to-slate-700 border-b border-blue-100 dark:border-slate-600 shadow-sm"
-                    >
+                    <div class="flex-none px-6 py-3 panel-header-left border-b shadow-sm">
                       <div class="flex items-center gap-3">
                         <div
                           class="flex items-center justify-center w-8 h-8 rounded-lg bg-blue-500 dark:bg-blue-600 shadow-md"
@@ -770,7 +730,9 @@
                           </svg>
                         </div>
                         <div class="flex-1">
-                          <h3 class="text-sm font-bold text-gray-800 dark:text-white tracking-tight">
+                          <h3
+                            class="text-sm font-bold text-gray-800 dark:text-white tracking-tight"
+                          >
                             Protocol Specification
                           </h3>
                           <p class="text-xs text-gray-600 dark:text-gray-300 mt-0.5">
@@ -819,9 +781,7 @@
                 {#snippet second()}
                   <div class="h-full flex flex-col">
                     <!-- Code Viewer Header - Matching Style -->
-                    <div
-                      class="flex-none px-6 py-3 bg-gradient-to-r from-emerald-50 to-teal-50 dark:from-slate-800 dark:to-slate-700 border-b border-emerald-100 dark:border-slate-600 shadow-sm"
-                    >
+                    <div class="flex-none px-6 py-3 panel-header-right border-b shadow-sm">
                       <div class="flex items-center gap-3">
                         <div
                           class="flex items-center justify-center w-8 h-8 rounded-lg bg-emerald-500 dark:bg-emerald-600 shadow-md"
@@ -841,7 +801,9 @@
                           </svg>
                         </div>
                         <div class="flex-1">
-                          <h3 class="text-sm font-bold text-gray-800 dark:text-white tracking-tight">
+                          <h3
+                            class="text-sm font-bold text-gray-800 dark:text-white tracking-tight"
+                          >
                             Generated Code
                           </h3>
                           <p class="text-xs text-gray-600 dark:text-gray-300 mt-0.5">
@@ -903,6 +865,26 @@
                           : $spec.includes('COBOL')
                             ? 'banking'
                             : 'chat'}
+                        onsimulate={() => {
+                          // Capture current log count as start index
+                          // Minimize console when simulation starts
+                          $layout.rightTopHeight = 90;
+                        }}
+                        onsimulationend={() => {
+                          // Add delay before expanding console for smoother transition
+                          setTimeout(() => {
+                            $layout.rightTopHeight = 60;
+
+                            // Trigger console replay scroll after expansion
+                            setTimeout(() => {
+                              if (consoleComponent) {
+                                consoleComponent.replayScroll(simulationStartIndex);
+                              }
+                            }, 300);
+                          }, 500);
+                          autoStartSimulation = false;
+                        }}
+                        {autoStartSimulation}
                       />
                     </div>
                   </div>
@@ -917,7 +899,7 @@
             {/if}
           {/snippet}
           {#snippet second()}
-            <Console logs={$formattedLogs} />
+            <Console bind:this={consoleComponent} logs={$formattedLogs} />
           {/snippet}
         </SplitPane>
       </div>
@@ -984,5 +966,29 @@
 
   :global(.dark *) {
     scrollbar-color: #475569 #1e293b;
+  }
+
+  /* Panel Headers - Light Mode */
+  .panel-header-left {
+    background: linear-gradient(to right, #eff6ff, #eef2ff);
+    border-color: #dbeafe;
+  }
+
+  .panel-header-right {
+    background: linear-gradient(to right, #ecfdf5, #f0fdfa);
+    border-color: #d1fae5;
+  }
+
+  /* Panel Headers - Dark Mode */
+  :global(.dark) .panel-header-left,
+  :global([data-mode='dark']) .panel-header-left {
+    background: linear-gradient(to right, #1e293b, #334155);
+    border-color: #475569;
+  }
+
+  :global(.dark) .panel-header-right,
+  :global([data-mode='dark']) .panel-header-right {
+    background: linear-gradient(to right, #1e293b, #334155);
+    border-color: #475569;
   }
 </style>

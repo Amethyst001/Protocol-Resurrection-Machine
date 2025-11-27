@@ -29,20 +29,21 @@
   ];
 </script>
 
+<!-- Activity Bar -->
 <div
-  class="w-12 flex flex-col bg-gray-100 dark:bg-gray-800 border-r border-gray-200 dark:border-gray-700 h-full"
+  class="activity-bar w-12 flex flex-col h-full"
 >
   {#each views as view}
     <button
-      class="p-3 relative group focus:outline-none transition-colors {activeView === view.id
-        ? 'text-blue-600 dark:text-blue-400 bg-white dark:bg-gray-700'
-        : 'text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-200 hover:bg-gray-200 dark:hover:bg-gray-700/50'}"
+      class="p-3 relative group focus:outline-none transition-colors activity-bar-btn {activeView === view.id
+        ? 'active'
+        : ''}"
       onclick={() => setView(view.id)}
       title={view.label}
       aria-label={view.label}
     >
       {#if activeView === view.id}
-        <div class="absolute left-0 top-0 bottom-0 w-0.5 bg-blue-600 dark:bg-blue-400"></div>
+        <div class="absolute left-0 top-0 bottom-0 w-0.5 activity-bar-indicator"></div>
       {/if}
       <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d={view.icon} />
@@ -50,3 +51,58 @@
     </button>
   {/each}
 </div>
+
+<style>
+  /* Light Mode - Activity Bar */
+  .activity-bar {
+    background-color: #f1f5f9;
+    border-right: 1px solid #e2e8f0;
+  }
+
+  .activity-bar-btn {
+    color: #64748b;
+  }
+
+  .activity-bar-btn:hover {
+    color: #0f172a;
+    background-color: #e2e8f0;
+  }
+
+  .activity-bar-btn.active {
+    color: #2563eb;
+    background-color: #ffffff;
+  }
+
+  .activity-bar-indicator {
+    background-color: #2563eb;
+  }
+
+  /* Dark Mode - Activity Bar */
+  :global(.dark) .activity-bar,
+  :global([data-mode='dark']) .activity-bar {
+    background-color: #1e293b;
+    border-right-color: #334155;
+  }
+
+  :global(.dark) .activity-bar-btn,
+  :global([data-mode='dark']) .activity-bar-btn {
+    color: #94a3b8;
+  }
+
+  :global(.dark) .activity-bar-btn:hover,
+  :global([data-mode='dark']) .activity-bar-btn:hover {
+    color: #e2e8f0;
+    background-color: rgba(51, 65, 85, 0.5);
+  }
+
+  :global(.dark) .activity-bar-btn.active,
+  :global([data-mode='dark']) .activity-bar-btn.active {
+    color: #60a5fa;
+    background-color: #334155;
+  }
+
+  :global(.dark) .activity-bar-indicator,
+  :global([data-mode='dark']) .activity-bar-indicator {
+    background-color: #60a5fa;
+  }
+</style>

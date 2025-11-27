@@ -358,15 +358,23 @@ export class CodeGenerator {
     let inString = false;
     let inComment = false;
     let inMultiLineComment = false;
+    let stringChar = '';
 
     for (let i = 0; i < code.length; i++) {
       const char = code[i];
       const nextChar = code[i + 1];
+      const prevChar = code[i - 1];
 
       // Handle string literals
-      if (char === '"' || char === "'" || char === '`') {
+      if ((char === '"' || char === "'" || char === '`') && prevChar !== '\\') {
         if (!inComment && !inMultiLineComment) {
-          inString = !inString;
+          if (!inString) {
+            inString = true;
+            stringChar = char;
+          } else if (char === stringChar) {
+            inString = false;
+            stringChar = '';
+          }
         }
       }
 

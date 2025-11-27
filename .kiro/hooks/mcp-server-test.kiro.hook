@@ -1,0 +1,13 @@
+{
+  "enabled": true,
+  "name": "Test MCP Server",
+  "description": "Tests generated MCP server by starting it and calling tools to ensure proper functionality",
+  "version": "1",
+  "when": {
+    "type": "userTriggered"
+  },
+  "then": {
+    "type": "runCommand",
+    "command": "npm run test:mcp-server"
+  }
+}

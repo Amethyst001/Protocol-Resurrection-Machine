@@ -7,6 +7,6 @@ coverage/
 .env.local
 generated/
 validation-errors.json
-.kiro/
+
 test_cargo/
 test_cargo_new/

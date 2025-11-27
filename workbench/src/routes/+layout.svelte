@@ -3,13 +3,22 @@
   import favicon from '$lib/assets/favicon.svg';
   import { onMount } from 'svelte';
   import { initTheme } from '$lib/utils/theme';
-  import { currentTheme } from '$lib/stores/theme';
+  import { currentTheme, theme } from '$lib/stores/theme';
+  import { browser } from '$app/environment';
 
   let { children } = $props();
 
   // Initialize theme on app load
   onMount(() => {
     initTheme();
+  });
+
+  // Sync theme stores to DOM attributes for CSS variables
+  $effect(() => {
+    if (browser) {
+      document.documentElement.setAttribute('data-theme', $currentTheme);
+      document.documentElement.setAttribute('data-mode', $theme);
+    }
   });
 </script>
 
@@ -19,7 +28,7 @@
 
 {#if $currentTheme === 'halloween'}
   <!-- Top Left Cobweb -->
-  <div class="fixed top-0 left-0 w-48 h-48 pointer-events-none z-50 opacity-80">
+  <div class="fixed top-0 left-0 w-48 h-48 pointer-events-none z-50 opacity-50">
     <svg
       viewBox="0 0 100 100"
       class="w-full h-full fill-none stroke-gray-500/40 dark:stroke-gray-400/30"
@@ -55,7 +64,7 @@
 
   <!-- Top Right Cobweb -->
   <div
-    class="fixed top-0 right-0 w-48 h-48 pointer-events-none z-50 opacity-80 transform scale-x-[-1]"
+    class="fixed top-0 right-0 w-48 h-48 pointer-events-none z-50 opacity-50 transform scale-x-[-1]"
   >
     <svg
       viewBox="0 0 100 100"

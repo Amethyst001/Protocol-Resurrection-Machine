@@ -1,0 +1,16 @@
+{
+  "enabled": true,
+  "name": "Spec Sync Reminder",
+  "description": "Reminds to regenerate code when spec documents are updated, keeping implementation in sync with design.",
+  "version": "1",
+  "when": {
+    "type": "fileEdited",
+    "patterns": [
+      ".kiro/specs/protocol-resurrection-machine/*.md"
+    ]
+  },
+  "then": {
+    "type": "askAgent",
+    "prompt": "The spec file {{filePath}} was just updated. If you've made changes to:\n- Requirements: Consider if new acceptance criteria need new correctness properties\n- Design: Consider if new correctness properties need new tasks\n- Tasks: Consider if implementation needs to be updated\nWould you like me to help update related spec files or regenerate any code?"
+  }
+}

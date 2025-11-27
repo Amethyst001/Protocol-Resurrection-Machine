@@ -114,10 +114,17 @@
   .pane {
     overflow: auto;
     position: relative;
+    transition:
+      width 0.5s cubic-bezier(0.4, 0, 0.2, 1),
+      height 0.5s cubic-bezier(0.4, 0, 0.2, 1);
+  }
+
+  .split-pane.dragging .pane {
+    transition: none;
   }
 
   .divider {
-    background: #9ca3af;
+    background: #e2e8f0;
     transition: background-color 0.2s;
     flex-shrink: 0;
     position: relative;
@@ -126,8 +133,9 @@
     margin: 0;
   }
 
-  :global(.dark) .divider {
-    background: #4b5563;
+  :global(.dark) .divider,
+  :global([data-mode='dark']) .divider {
+    background: #334155;
   }
 
   .divider.horizontal {

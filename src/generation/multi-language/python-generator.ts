@@ -88,7 +88,8 @@ Regenerate using: protocol-resurrection-machine generate ${toKebabCase(spec.prot
     return `from dataclasses import dataclass
 from typing import Optional, Union, List
 from enum import Enum
-import re`;
+import re
+import struct`;
   }
 
   /**
@@ -376,9 +377,50 @@ ${parseLogic}
 
           const fieldName = toSnakeCase(token.fieldName!);
           extractedFields.add(token.fieldName!);
+          const fieldType = field.type.kind || field.type;
 
           lines.push(`            # Extract required field: ${token.fieldName}`);
 
+          // BINARY HANDLING
+          if (['u8', 'byte', 'i8', 'u16', 'i16', 'u32', 'i32', 'f32', 'float', 'f64', 'double'].includes(fieldType)) {
+            if (fieldType === 'u8' || fieldType === 'byte') {
+              lines.push(`            if offset + 1 > len(data): raise ${toPascalCase(spec.protocol.name)}ParseError("Unexpected end of data", offset=offset)`);
+              lines.push(`            fields['${fieldName}'] = data[offset]`);
+              lines.push(`            offset += 1`);
+            } else if (fieldType === 'i8') {
+              lines.push(`            if offset + 1 > len(data): raise ${toPascalCase(spec.protocol.name)}ParseError("Unexpected end of data", offset=offset)`);
+              lines.push(`            fields['${fieldName}'] = struct.unpack('>b', data[offset:offset+1])[0]`);
+              lines.push(`            offset += 1`);
+            } else if (fieldType === 'u16') {
+              lines.push(`            if offset + 2 > len(data): raise ${toPascalCase(spec.protocol.name)}ParseError("Unexpected end of data", offset=offset)`);
+              lines.push(`            fields['${fieldName}'] = int.from_bytes(data[offset:offset+2], 'big')`);
+              lines.push(`            offset += 2`);
+            } else if (fieldType === 'i16') {
+              lines.push(`            if offset + 2 > len(data): raise ${toPascalCase(spec.protocol.name)}ParseError("Unexpected end of data", offset=offset)`);
+              lines.push(`            fields['${fieldName}'] = int.from_bytes(data[offset:offset+2], 'big', signed=True)`);
+              lines.push(`            offset += 2`);
+            } else if (fieldType === 'u32') {
+              lines.push(`            if offset + 4 > len(data): raise ${toPascalCase(spec.protocol.name)}ParseError("Unexpected end of data", offset=offset)`);
+              lines.push(`            fields['${fieldName}'] = int.from_bytes(data[offset:offset+4], 'big')`);
+              lines.push(`            offset += 4`);
+            } else if (fieldType === 'i32') {
+              lines.push(`            if offset + 4 > len(data): raise ${toPascalCase(spec.protocol.name)}ParseError("Unexpected end of data", offset=offset)`);
+              lines.push(`            fields['${fieldName}'] = int.from_bytes(data[offset:offset+4], 'big', signed=True)`);
+              lines.push(`            offset += 4`);
+            } else if (fieldType === 'f32' || fieldType === 'float') {
+              lines.push(`            if offset + 4 > len(data): raise ${toPascalCase(spec.protocol.name)}ParseError("Unexpected end of data", offset=offset)`);
+              lines.push(`            fields['${fieldName}'] = struct.unpack('>f', data[offset:offset+4])[0]`);
+              lines.push(`            offset += 4`);
+            } else if (fieldType === 'f64' || fieldType === 'double') {
+              lines.push(`            if offset + 8 > len(data): raise ${toPascalCase(spec.protocol.name)}ParseError("Unexpected end of data", offset=offset)`);
+              lines.push(`            fields['${fieldName}'] = struct.unpack('>d', data[offset:offset+8])[0]`);
+              lines.push(`            offset += 8`);
+            }
+            lines.push('');
+            break; // Done with this field
+          }
+
+          // TEXT HANDLING (Original Logic)
           // Determine how to find the end of this field
           if (nextToken) {
             if (nextToken.type === 'fixed') {
@@ -417,7 +459,6 @@ ${parseLogic}
           lines.push(`            # Convert to ${field.type.kind || field.type}`);
           lines.push(`            try:`);
 
-          const fieldType = field.type.kind || field.type;
           switch (fieldType) {
             case 'number':
               lines.push(`                fields['${fieldName}'] = float(field_value)`);
@@ -584,6 +625,7 @@ This file is auto - generated.Do not edit manually.
     // Generate imports
     lines.push(`from typing import Optional
 from dataclasses import asdict
+import struct
 from .${toSnakeCase(spec.protocol.name)}_parser import ${toPascalCase(spec.protocol.name)}Error, ${toPascalCase(spec.protocol.name)}ValidationError`);
 
     // Import message types
@@ -676,24 +718,50 @@ ${serializeLogic}
   /**
    * Generate serialization logic from format string
    */
-  private generateSerializeLogic(_spec: ProtocolSpec, messageType: any): string {
+  private generateSerializeLogic(spec: ProtocolSpec, messageType: any): string {
     const lines: string[] = [];
     const parser = new EnhancedFormatParser();
     const parsed = parser.parse(messageType.format);
 
-    lines.push('        # Build string representation');
-    lines.push('        result = ""');
+    lines.push('        # Build bytes parts');
+    lines.push('        parts = []');
 
     for (const token of parsed.tokens) {
       switch (token.type) {
         case 'fixed':
-          lines.push(`        result += "${this.escapePythonString(token.value)}"`);
+          lines.push(`        parts.append(b"${this.escapePythonString(token.value)}")`);
           break;
         case 'field':
           const fieldName = toSnakeCase(token.fieldName!);
+          const field = messageType.fields.find((f: any) => f.name === token.fieldName);
+          const fieldType = field ? (field.type.kind || field.type) : 'string';
+
           lines.push(`        # Add required field: ${token.fieldName}`);
-          lines.push(`        result += str(message.${fieldName})`);
+
+          if (['u8', 'byte', 'i8', 'u16', 'i16', 'u32', 'i32', 'f32', 'float', 'f64', 'double'].includes(fieldType)) {
+            if (fieldType === 'u8' || fieldType === 'byte') {
+              lines.push(`        parts.append(bytes([message.${fieldName}]))`);
+            } else if (fieldType === 'i8') {
+              lines.push(`        parts.append(struct.pack('>b', message.${fieldName}))`);
+            } else if (fieldType === 'u16') {
+              lines.push(`        parts.append(message.${fieldName}.to_bytes(2, 'big'))`);
+            } else if (fieldType === 'i16') {
+              lines.push(`        parts.append(message.${fieldName}.to_bytes(2, 'big', signed=True))`);
+            } else if (fieldType === 'u32') {
+              lines.push(`        parts.append(message.${fieldName}.to_bytes(4, 'big'))`);
+            } else if (fieldType === 'i32') {
+              lines.push(`        parts.append(message.${fieldName}.to_bytes(4, 'big', signed=True))`);
+            } else if (fieldType === 'f32' || fieldType === 'float') {
+              lines.push(`        parts.append(struct.pack('>f', message.${fieldName}))`);
+            } else if (fieldType === 'f64' || fieldType === 'double') {
+              lines.push(`        parts.append(struct.pack('>d', message.${fieldName}))`);
+            }
+          } else {
+            // String/Text fallback
+            lines.push(`        parts.append(str(message.${fieldName}).encode("utf-8"))`);
+          }
           break;
+
         case 'optional':
           const optFieldName = toSnakeCase(token.fieldName!);
           const optPrefix = this.escapePythonString(token.optionalPrefix || '');
@@ -701,18 +769,14 @@ ${serializeLogic}
 
           lines.push(`        # Add optional field: ${token.fieldName}`);
           lines.push(`        if message.${optFieldName} is not None:`);
-          lines.push(`            result += "${optPrefix}"`);
-          lines.push(`            result += str(message.${optFieldName})`);
+          lines.push(`            parts.append(b"${optPrefix}")`);
+          lines.push(`            parts.append(str(message.${optFieldName}).encode("utf-8"))`);
           if (token.optionalSuffix) {
-            lines.push(`            result += "${optSuffix}"`);
+            lines.push(`            parts.append(b"${optSuffix}")`);
           }
           break;
       }
     }
-
-    lines.push('');
-    lines.push('        # Encode to bytes');
-    lines.push('        parts.append(result.encode("utf-8"))');
 
     return lines.join('\n');
   }

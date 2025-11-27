@@ -1,0 +1,13 @@
+{
+  "enabled": true,
+  "name": "Validate YAML Protocol Spec on Save",
+  "description": "Automatically validates YAML protocol specifications when they are saved, providing immediate feedback on syntax and semantic errors.",
+  "version": "1",
+  "when": {
+    "type": "userTriggered"
+  },
+  "then": {
+    "type": "askAgent",
+    "prompt": "The YAML protocol specification file {{filePath}} was just saved. Please validate it against the protocol spec schema and report any errors. Check for:\n1. Valid YAML syntax\n2. Required fields (protocol.name, protocol.port, connection.type, messageTypes)\n3. Format string placeholders match field definitions\n4. Enum references are defined in types section\n5. Port numbers are valid (1-65535)\n6. Validation constraints are reasonable\n7. Format strings can be compiled to state machines (no ambiguous transitions)\n8. All states in state machine are reachable\n9. No infinite loops in state machine transitions\n10. State transitions are deterministic\nIf valid, confirm with a brief message. If invalid, provide detailed error messages with line numbers and suggestions for fixes."
+  }
+}

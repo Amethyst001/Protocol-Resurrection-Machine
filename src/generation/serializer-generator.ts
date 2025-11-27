@@ -711,7 +711,8 @@ export class ${className} {
     const { messageType } = strategy;
     const lines: string[] = [];
 
-    lines.push('let result = \'\';');
+    // We will build an array of Buffers/strings and concat them at the end
+    lines.push('const parts: (string | Buffer)[] = [];');
     lines.push('');
 
     // Use EnhancedFormatParser to get correct token sequence
@@ -725,7 +726,7 @@ export class ${className} {
       switch (token.type) {
         case 'fixed':
           // Append fixed string
-          lines.push(`result += ${JSON.stringify(token.value)};`);
+          lines.push(`parts.push(Buffer.from(${JSON.stringify(token.value)}, 'utf-8'));`);
           break;
 
         case 'field':
@@ -733,8 +734,49 @@ export class ${className} {
           const field = messageType.fields.find((f: any) => f.name === token.fieldName);
           if (field) {
             lines.push(`// Add field: ${field.name}`);
-            const fieldFormatting = this.generateFieldFormatting(field);
-            lines.push(fieldFormatting);
+
+            const fieldType = field.type.kind || field.type;
+
+            // BINARY HANDLING
+            if (['u8', 'byte', 'i8', 'u16', 'i16', 'u32', 'i32', 'f32', 'float', 'f64', 'double'].includes(fieldType)) {
+              if (fieldType === 'u8' || fieldType === 'byte') {
+                lines.push(`const buf_${field.name} = Buffer.alloc(1);`);
+                lines.push(`buf_${field.name}.writeUInt8(message.${field.name}, 0);`);
+                lines.push(`parts.push(buf_${field.name});`);
+              } else if (fieldType === 'i8') {
+                lines.push(`const buf_${field.name} = Buffer.alloc(1);`);
+                lines.push(`buf_${field.name}.writeInt8(message.${field.name}, 0);`);
+                lines.push(`parts.push(buf_${field.name});`);
+              } else if (fieldType === 'u16') {
+                lines.push(`const buf_${field.name} = Buffer.alloc(2);`);
+                lines.push(`buf_${field.name}.writeUInt16BE(message.${field.name}, 0);`);
+                lines.push(`parts.push(buf_${field.name});`);
+              } else if (fieldType === 'i16') {
+                lines.push(`const buf_${field.name} = Buffer.alloc(2);`);
+                lines.push(`buf_${field.name}.writeInt16BE(message.${field.name}, 0);`);
+                lines.push(`parts.push(buf_${field.name});`);
+              } else if (fieldType === 'u32') {
+                lines.push(`const buf_${field.name} = Buffer.alloc(4);`);
+                lines.push(`buf_${field.name}.writeUInt32BE(message.${field.name}, 0);`);
+                lines.push(`parts.push(buf_${field.name});`);
+              } else if (fieldType === 'i32') {
+                lines.push(`const buf_${field.name} = Buffer.alloc(4);`);
+                lines.push(`buf_${field.name}.writeInt32BE(message.${field.name}, 0);`);
+                lines.push(`parts.push(buf_${field.name});`);
+              } else if (fieldType === 'f32' || fieldType === 'float') {
+                lines.push(`const buf_${field.name} = Buffer.alloc(4);`);
+                lines.push(`buf_${field.name}.writeFloatBE(message.${field.name}, 0);`);
+                lines.push(`parts.push(buf_${field.name});`);
+              } else if (fieldType === 'f64' || fieldType === 'double') {
+                lines.push(`const buf_${field.name} = Buffer.alloc(8);`);
+                lines.push(`buf_${field.name}.writeDoubleBE(message.${field.name}, 0);`);
+                lines.push(`parts.push(buf_${field.name});`);
+              }
+            } else {
+              // TEXT HANDLING
+              const fieldFormatting = this.generateFieldFormatting(field);
+              lines.push(fieldFormatting);
+            }
           }
           break;
 
@@ -745,11 +787,15 @@ export class ${className} {
             lines.push(`// Add optional field: ${optField.name}`);
             lines.push(`if (message.${optField.name} !== undefined) {`);
             if (token.optionalPrefix) {
-              lines.push(`  result += ${JSON.stringify(token.optionalPrefix)};`);
+              lines.push(`  parts.push(Buffer.from(${JSON.stringify(token.optionalPrefix)}, 'utf-8'));`);
             }
-            lines.push(`  result += message.${optField.name};`);
+
+            // For optional fields, we default to string serialization for now unless we want to duplicate the binary logic
+            // Assuming optional fields in mixed protocols are usually text-based or handled simply
+            lines.push(`  parts.push(Buffer.from(String(message.${optField.name}), 'utf-8'));`);
+
             if (token.optionalSuffix) {
-              lines.push(`  result += ${JSON.stringify(token.optionalSuffix)};`);
+              lines.push(`  parts.push(Buffer.from(${JSON.stringify(token.optionalSuffix)}, 'utf-8'));`);
             }
             lines.push(`}`);
           }
@@ -758,7 +804,11 @@ export class ${className} {
     }
 
     lines.push('');
-    lines.push('const data = Buffer.from(result, \'utf-8\');');
+    // Helper to concat string|Buffer
+    lines.push(`
+    const buffers = parts.map(p => Buffer.isBuffer(p) ? p : Buffer.from(p, 'utf-8'));
+    const data = Buffer.concat(buffers);
+    `);
     lines.push('');
     lines.push('return {');
     lines.push('  success: true,');
@@ -808,23 +858,29 @@ export class ${className} {
 
     switch (field.type.kind) {
       case 'string':
-        lines.push(`result += message.${field.name} || '';`);
+        lines.push(`parts.push(message.${field.name} || '');`);
         break;
 
       case 'number':
-        lines.push(`result += String(message.${field.name});`);
+        lines.push(`parts.push(String(message.${field.name}));`);
         break;
 
       case 'enum':
-        lines.push(`result += String(message.${field.name});`);
+        lines.push(`parts.push(String(message.${field.name}));`);
         break;
 
       case 'boolean':
-        lines.push(`result += message.${field.name} ? 'true' : 'false';`);
+        lines.push(`parts.push(message.${field.name} ? 'true' : 'false');`);
         break;
 
       case 'bytes':
-        lines.push(`result += message.${field.name}.toString('utf-8');`);
+        // For bytes in a format string, we assume we want the raw bytes
+        lines.push(`parts.push(message.${field.name});`);
+        break;
+
+      default:
+        // Fallback for unknown types - try to convert to string
+        lines.push(`parts.push(String(message.${field.name}));`);
         break;
     }
 

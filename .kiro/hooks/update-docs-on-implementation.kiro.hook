@@ -1,0 +1,21 @@
+{
+  "enabled": true,
+  "name": "Update Documentation on Implementation",
+  "description": "Automatically updates README and documentation when implementation files are created or modified, keeping documentation in sync with code.",
+  "version": "1",
+  "when": {
+    "type": "fileEdited",
+    "patterns": [
+      "src/**/*.ts",
+      "src/mcp/**/*.ts",
+      "src/testing/**/*.ts",
+      "src/discovery/**/*.ts",
+      "workbench/src/**/*.svelte",
+      "workbench/src/**/*.ts"
+    ]
+  },
+  "then": {
+    "type": "askAgent",
+    "prompt": "The implementation file {{filePath}} was just modified. Please check if any documentation needs updating:\n1. **README.md**: Does it need new usage examples or API documentation?\n2. **HACKATHON-GUIDE.md**: Should implementation progress be noted?\n3. **Generated protocol docs**: If this affects generated code, should protocol READMEs be updated?\n4. **Architecture docs**: If this changes system architecture, update design documentation.\n5. **MCP server docs**: If this affects MCP integration, update MCP documentation.\n6. **Workbench docs**: If this affects UI components, update workbench documentation.\n7. **Multi-language docs**: If this affects code generation for multiple languages, update language-specific docs.\nIf documentation is out of sync, please suggest specific updates or ask if I should update the docs now."
+  }
+}

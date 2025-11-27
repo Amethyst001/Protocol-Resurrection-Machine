@@ -373,6 +373,7 @@ export class YAMLParser {
   private parseFieldType(data: any, fieldName: string, messageName: string): FieldType {
     if (typeof data === 'string') {
       // Simple string type: "string", "number", "boolean", "bytes"
+      // Also support binary types: u8, u16, u32, i8, i16, i32, f32, f64
       switch (data) {
         case 'string':
           return { kind: 'string' };
@@ -382,6 +383,29 @@ export class YAMLParser {
           return { kind: 'boolean' };
         case 'bytes':
           return { kind: 'bytes' };
+        // Binary integer types - map to number with constraints
+        case 'u8':
+          return { kind: 'number', min: 0, max: 255 };
+        case 'u16':
+          return { kind: 'number', min: 0, max: 65535 };
+        case 'u32':
+          return { kind: 'number', min: 0, max: 4294967295 };
+        case 'i8':
+          return { kind: 'number', min: -128, max: 127 };
+        case 'i16':
+          return { kind: 'number', min: -32768, max: 32767 };
+        case 'i32':
+          return { kind: 'number', min: -2147483648, max: 2147483647 };
+        // Binary float types - map to number
+        case 'f32':
+        case 'f64':
+        case 'float':
+        case 'double':
+          return { kind: 'number' };
+        // Integer alias
+        case 'integer':
+        case 'int':
+          return { kind: 'number' };
         default:
           throw new YAMLParseError(
             `Field "${fieldName}" in message "${messageName}" has invalid type: ${data}`

@@ -13,6 +13,8 @@
   let isVisible = $state(true);
   let observer: IntersectionObserver | null = null;
 
+  let { onsimulate }: { onsimulate?: () => void } = $props();
+
   // Reactive derived state for the diagram - STATIC (no topologyState dependency)
   let diagramCode = $derived(
     generateMermaid(
@@ -25,10 +27,7 @@
 
   // Get current topology type
   let topologyType = $derived(
-    detectTopologyType(
-      $activeProtocol?.name || 'Unknown',
-      $activeProtocol?.spec || {}
-    )
+    detectTopologyType($activeProtocol?.name || 'Unknown', $activeProtocol?.spec || {})
   );
 
   // Re-render ONLY when protocol or theme changes (not active node)
@@ -126,7 +125,7 @@
       const id = `topology-${Date.now()}`;
       const { svg } = await mermaid.render(id, code);
       diagramSvg = svg;
-      
+
       // After rendering, add data attributes to nodes and edges
       setTimeout(() => addDataAttributes(), 0);
     } catch (err) {
@@ -156,10 +155,18 @@
     // Add data-edge-id attributes to edges
     const edges = containerEl.querySelectorAll('.edgePath');
     edges.forEach((edge, index) => {
-      // For edges, we'll use a combination of source-target or just index
-      // Mermaid doesn't provide easy edge IDs, so we'll use index-based approach
+      // Use index-based approach for edge identification
       const edgeId = `edge-${index}`;
       edge.setAttribute('data-edge-id', edgeId);
+
+      // Store original stroke properties for restoration
+      const path = edge.querySelector('path');
+      if (path) {
+        const originalStroke = path.getAttribute('stroke') || '#64748b';
+        const originalStrokeWidth = path.getAttribute('stroke-width') || '1.5';
+        path.setAttribute('data-original-stroke', originalStroke);
+        path.setAttribute('data-original-stroke-width', originalStrokeWidth);
+      }
     });
   }
 
@@ -167,6 +174,8 @@
     if (!isVisible) return;
 
     // Queue animations based on topology type
+    if (onsimulate) onsimulate();
+
     if (topologyType === 'DENDRITE') {
       queueDendriteAnimation();
     } else if (topologyType === 'MESH') {
@@ -194,11 +203,29 @@
   function queueMeshAnimation() {
     // Bidirectional: client ↔ server
     animationQueue.enqueue({ id: 'client-a', type: 'node', nodeId: 'CLIENT_A', duration: 600 });
-    animationQueue.enqueue({ id: 'edge1', type: 'edge', edgeId: 'edge-0', duration: 400, direction: 'forward' });
+    animationQueue.enqueue({
+      id: 'edge1',
+      type: 'edge',
+      edgeId: 'edge-0',
+      duration: 400,
+      direction: 'forward',
+    });
     animationQueue.enqueue({ id: 'server', type: 'node', nodeId: 'SERVER', duration: 600 });
-    animationQueue.enqueue({ id: 'edge2', type: 'edge', edgeId: 'edge-0', duration: 400, direction: 'backward' });
+    animationQueue.enqueue({
+      id: 'edge2',
+      type: 'edge',
+      edgeId: 'edge-0',
+      duration: 400,
+      direction: 'backward',
+    });
     animationQueue.enqueue({ id: 'client-b', type: 'node', nodeId: 'CLIENT_B', duration: 600 });
-    animationQueue.enqueue({ id: 'edge3', type: 'edge', edgeId: 'edge-1', duration: 400, direction: 'forward' });
+    animationQueue.enqueue({
+      id: 'edge3',
+      type: 'edge',
+      edgeId: 'edge-1',
+      duration: 400,
+      direction: 'forward',
+    });
     animationQueue.enqueue({ id: 'server2', type: 'node', nodeId: 'SERVER', duration: 600 });
     animationQueue.enqueue({ id: 'edge4', type: 'edge', edgeId: 'edge-2', duration: 400 });
     animationQueue.enqueue({ id: 'bot', type: 'node', nodeId: 'BOT', duration: 600 });
@@ -224,7 +251,12 @@
 </script>
 
 <div class="topology-wrapper">
-  <div class="topology-container" bind:this={containerEl} data-reduced-motion={typeof window !== 'undefined' && window.matchMedia('(prefers-reduced-motion: reduce)').matches}>
+  <div
+    class="topology-container"
+    bind:this={containerEl}
+    data-reduced-motion={typeof window !== 'undefined' &&
+      window.matchMedia('(prefers-reduced-motion: reduce)').matches}
+  >
     {#if error}
       <div class="flex flex-col items-center justify-center h-full text-red-500 p-4 text-center">
         <p class="font-bold mb-2">Failed to render topology</p>
@@ -256,14 +288,10 @@
       </div>
     {/if}
   </div>
-  
+
   {#if diagramSvg && !error}
     <div class="simulation-controls">
-      <button 
-        onclick={startSimulation}
-        class="simulate-button"
-        disabled={!isVisible}
-      >
+      <button onclick={startSimulation} class="simulate-button" disabled={!isVisible}>
         Simulate Data Flow
       </button>
     </div>
@@ -293,6 +321,7 @@
     max-width: 100%;
     height: auto;
     max-height: 100%;
+    overflow: visible !important; /* Prevent clipping of glowing elements */
   }
 
   .topology-placeholder {
@@ -344,53 +373,105 @@
     animation: spin 1s linear infinite;
   }
 
-  /* Node pulse animation */
-  .topology-container :global(.animate-pulse-glow) {
-    animation: pulse-glow 600ms ease-in-out;
+  /* Node pulse animation - Cyber-Physical glow effect */
+  /* Target the shape elements inside nodes for proper SVG transform */
+  .topology-container :global(.node.animate-pulse-glow rect),
+  .topology-container :global(.node.animate-pulse-glow circle),
+  .topology-container :global(.node.animate-pulse-glow polygon),
+  .topology-container :global(.node.animate-pulse-glow path) {
+    /* CRITICAL: Scale from element's own center, not SVG canvas origin */
+    transform-box: fill-box;
+    transform-origin: center center;
+    animation: pulse-glow 600ms cubic-bezier(0.4, 0, 0.2, 1);
   }
-  
+
+  /* Glow effect on the entire node group */
+  .topology-container :global(.node.animate-pulse-glow) {
+    filter: drop-shadow(0 0 12px #39ff14) drop-shadow(0 0 24px rgba(57, 255, 20, 0.4));
+  }
+
   @keyframes pulse-glow {
-    0%, 100% {
-      filter: drop-shadow(0 0 0 transparent);
+    0%,
+    100% {
       transform: scale(1);
     }
     50% {
-      filter: drop-shadow(0 0 8px rgba(59, 130, 246, 0.8));
-      transform: scale(1.05);
+      transform: scale(1.08);
     }
   }
-  
-  /* Edge flow animation */
-  .topology-container :global(.animate-edge-flow) {
-    stroke-dasharray: 10 5;
-    animation: edge-flow 400ms linear;
+
+  /* Edge flow animation - Data traveling effect */
+  .topology-container :global(.edgePath path.animate-edge-flow) {
+    stroke: #39ff14 !important;
+    stroke-width: 3 !important;
+    stroke-dasharray: 8 4;
+    stroke-linecap: round;
+    animation: edge-flow 400ms linear forwards;
+    filter: drop-shadow(0 0 6px #39ff14) drop-shadow(0 0 2px #fff);
   }
-  
+
   @keyframes edge-flow {
-    from {
+    0% {
+      stroke-dashoffset: 100;
+      opacity: 0.6;
+    }
+    50% {
+      opacity: 1;
+    }
+    100% {
       stroke-dashoffset: 0;
-    }
-    to {
-      stroke-dashoffset: -15;
+      opacity: 0.6;
     }
   }
-  
-  .topology-container :global(.animate-edge-flow.reverse) {
-    animation-direction: reverse;
+
+  .topology-container :global(.edgePath path.animate-edge-flow.reverse) {
+    animation: edge-flow-reverse 400ms linear forwards;
   }
-  
+
+  @keyframes edge-flow-reverse {
+    0% {
+      stroke-dashoffset: -100;
+      opacity: 0.6;
+    }
+    50% {
+      opacity: 1;
+    }
+    100% {
+      stroke-dashoffset: 0;
+      opacity: 0.6;
+    }
+  }
+
+  /* Arrowhead glow during edge animation */
+  .topology-container :global(.edgePath.animate-edge-active marker path) {
+    fill: #39ff14 !important;
+  }
+
   /* Respect reduced motion preference */
-  .topology-container[data-reduced-motion="true"] :global(.animate-pulse-glow),
-  .topology-container[data-reduced-motion="true"] :global(.animate-edge-flow) {
+  .topology-container[data-reduced-motion='true'] :global(.animate-pulse-glow),
+  .topology-container[data-reduced-motion='true'] :global(.animate-pulse-glow rect),
+  .topology-container[data-reduced-motion='true'] :global(.animate-pulse-glow circle),
+  .topology-container[data-reduced-motion='true'] :global(.animate-pulse-glow polygon),
+  .topology-container[data-reduced-motion='true'] :global(.animate-edge-flow) {
     animation: none !important;
-    filter: none !important;
+    filter: drop-shadow(0 0 8px #39ff14) !important; /* Still show glow, just no motion */
     transform: none !important;
   }
-  
-  /* GPU acceleration */
-  .topology-container :global(.animate-pulse-glow),
-  .topology-container :global(.animate-edge-flow) {
-    will-change: transform, filter;
-    transform: translateZ(0);
+
+  /* GPU acceleration for smooth animations */
+  .topology-container :global(.node) {
+    will-change: filter;
+  }
+
+  .topology-container :global(.node.animate-pulse-glow rect),
+  .topology-container :global(.node.animate-pulse-glow circle),
+  .topology-container :global(.node.animate-pulse-glow polygon),
+  .topology-container :global(.node.animate-pulse-glow path) {
+    will-change: transform;
+    backface-visibility: hidden;
+  }
+
+  .topology-container :global(.edgePath path) {
+    will-change: stroke-dashoffset, filter, opacity;
   }
 </style>

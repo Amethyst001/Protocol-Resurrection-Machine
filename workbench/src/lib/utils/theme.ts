@@ -56,7 +56,7 @@ export function applyTheme(config: ThemeConfig): void {
     localStorage.setItem(MODE_STORAGE_KEY, config.mode);
 }
 
-import { currentTheme } from '$lib/stores/theme';
+import { currentTheme, theme } from '$lib/stores/theme';
 
 /**
  * Toggle between Halloween and Pro themes
@@ -73,6 +73,7 @@ export function toggleTheme(): void {
 
     applyTheme(config);
     currentTheme.set(config.theme);
+    theme.set(config.mode);
 }
 
 /**
@@ -90,16 +91,17 @@ export function toggleMode(): void {
 
     applyTheme(config);
     currentTheme.set(config.theme);
+    theme.set(config.mode);
 }
 
 /**
  * Set specific theme
  */
-export function setTheme(theme: Theme): void {
+export function setTheme(themeName: Theme): void {
     const config = getThemeConfig();
-    config.theme = theme;
+    config.theme = themeName;
     applyTheme(config);
-    currentTheme.set(theme);
+    currentTheme.set(themeName);
 }
 
 /**
@@ -109,6 +111,7 @@ export function setMode(mode: Mode): void {
     const config = getThemeConfig();
     config.mode = mode;
     applyTheme(config);
+    theme.set(mode);
 }
 
 /**
@@ -118,4 +121,5 @@ export function initTheme(): void {
     const config = getThemeConfig();
     applyTheme(config);
     currentTheme.set(config.theme);
+    theme.set(config.mode);
 }

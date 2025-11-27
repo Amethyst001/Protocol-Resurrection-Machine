@@ -28,24 +28,33 @@ function initializeFingerprintDatabase(): FingerprintDatabase {
 	const parser = new YAMLParser();
 
 	try {
-		// Load protocol specs from protocols directory (parent of workbench)
-		const protocolsDir = join(process.cwd(), '..', 'protocols');
-		console.log('[Fingerprint DB] Loading from:', protocolsDir);
-
-		const files = readdirSync(protocolsDir).filter(f => f.endsWith('.yaml'));
-		console.log('[Fingerprint DB] Found protocol files:', files);
+		// Load protocol specs from multiple directories
+		const protocolDirs = [
+			join(process.cwd(), '..', 'protocols'),         // Main protocols folder
+			join(process.cwd(), 'static', 'presets'),       // Workbench presets
+		];
 
 		let loadedCount = 0;
-		for (const file of files) {
+		for (const protocolsDir of protocolDirs) {
 			try {
-				const yamlContent = readFileSync(join(protocolsDir, file), 'utf-8');
-				const spec = parser.parse(yamlContent);
-				const fingerprint = generateFingerprint(spec);
-				fingerprintDb.add(fingerprint);
-				loadedCount++;
-				console.log(`[Fingerprint DB] Loaded ${file} -> ${fingerprint.protocol}`);
-			} catch (error) {
-				console.warn(`Failed to load fingerprint from ${file}:`, error);
+				console.log('[Fingerprint DB] Loading from:', protocolsDir);
+				const files = readdirSync(protocolsDir).filter(f => f.endsWith('.yaml'));
+				console.log('[Fingerprint DB] Found protocol files:', files);
+
+				for (const file of files) {
+					try {
+						const yamlContent = readFileSync(join(protocolsDir, file), 'utf-8');
+						const spec = parser.parse(yamlContent);
+						const fingerprint = generateFingerprint(spec);
+						fingerprintDb.add(fingerprint);
+						loadedCount++;
+						console.log(`[Fingerprint DB] Loaded ${file} -> ${fingerprint.protocol}`);
+					} catch (error) {
+						console.warn(`Failed to load fingerprint from ${file}:`, error);
+					}
+				}
+			} catch (dirError) {
+				console.warn(`[Fingerprint DB] Could not read directory ${protocolsDir}:`, dirError);
 			}
 		}
 

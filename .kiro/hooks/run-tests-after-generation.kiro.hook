@@ -1,0 +1,16 @@
+{
+  "enabled": true,
+  "name": "Run Tests After Code Generation",
+  "description": "Automatically runs property-based tests when generated protocol code is modified, catching generation bugs immediately.",
+  "version": "1",
+  "when": {
+    "type": "fileEdited",
+    "patterns": [
+      "generated/**/*.ts"
+    ]
+  },
+  "then": {
+    "type": "runCommand",
+    "command": "npm test -- {{filePath}}"
+  }
+}

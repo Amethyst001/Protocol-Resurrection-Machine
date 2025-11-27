@@ -88,12 +88,12 @@
   }
 </script>
 
-<div class="h-full flex flex-col bg-white dark:bg-slate-900 text-gray-900 dark:text-gray-100">
+<div class="h-full flex flex-col discovery-container">
   <!-- Header -->
   <div
-    class="flex items-center justify-between px-4 py-2 border-b border-gray-200 dark:border-gray-700 bg-gray-50 dark:bg-gray-800/50"
+    class="flex items-center justify-between px-4 py-2 border-b discovery-header"
   >
-    <h2 class="text-sm font-semibold uppercase tracking-wider text-gray-500 dark:text-gray-400">
+    <h2 class="text-sm font-semibold uppercase tracking-wider discovery-header-text">
       Protocol Discovery
     </h2>
     <div class="flex gap-2">
@@ -308,18 +308,18 @@
         </div>
       </div>
     {:else}
-      <div class="flex flex-col items-center justify-center h-64 text-gray-400 text-center">
+      <div class="flex flex-col items-center justify-center h-64 text-center discovery-empty">
         {#if $currentTheme === 'halloween'}
           <span class="text-6xl mb-4 block">🕸️</span>
-          <p class="text-sm font-semibold text-gray-700 dark:text-gray-400">
+          <p class="text-sm font-semibold discovery-empty-title">
             The spirits are silent...
           </p>
-          <p class="text-xs mt-1 text-gray-600 dark:text-gray-500">
+          <p class="text-xs mt-1 discovery-empty-subtitle">
             Cast "Discover" to sense the ethereal plane
           </p>
         {:else}
           <svg
-            class="w-12 h-12 mb-3 opacity-50"
+            class="w-12 h-12 mb-3 discovery-empty-icon"
             fill="none"
             stroke="currentColor"
             viewBox="0 0 24 24"
@@ -331,10 +331,72 @@
               d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"
             />
           </svg>
-          <p class="text-sm">No discovery results yet.</p>
-          <p class="text-xs mt-1">Click "Discover" in the toolbar to analyze a protocol.</p>
+          <p class="text-sm discovery-empty-title">No discovery results yet.</p>
+          <p class="text-xs mt-1 discovery-empty-subtitle">Click "Discover" in the toolbar to analyze a protocol.</p>
         {/if}
       </div>
     {/if}
   </div>
 </div>
+
+<style>
+  /* Light Mode - Engineering Blueprint */
+  .discovery-container {
+    background-color: #FFFFFF;
+    color: #0F172A;
+  }
+  
+  .discovery-header {
+    background-color: #F8FAFC;
+    border-color: #E2E8F0;
+  }
+  
+  .discovery-header-text {
+    color: #64748B;
+  }
+  
+  .discovery-empty-icon {
+    color: #CBD5E1;
+  }
+  
+  .discovery-empty-title {
+    color: #64748B;
+  }
+  
+  .discovery-empty-subtitle {
+    color: #94A3B8;
+  }
+  
+  /* Dark Mode */
+  :global(.dark) .discovery-container,
+  :global([data-mode="dark"]) .discovery-container {
+    background-color: #0f172a;
+    color: #f1f5f9;
+  }
+  
+  :global(.dark) .discovery-header,
+  :global([data-mode="dark"]) .discovery-header {
+    background-color: rgba(30, 41, 59, 0.5);
+    border-color: #334155;
+  }
+  
+  :global(.dark) .discovery-header-text,
+  :global([data-mode="dark"]) .discovery-header-text {
+    color: #94a3b8;
+  }
+  
+  :global(.dark) .discovery-empty-icon,
+  :global([data-mode="dark"]) .discovery-empty-icon {
+    color: #475569;
+  }
+  
+  :global(.dark) .discovery-empty-title,
+  :global([data-mode="dark"]) .discovery-empty-title {
+    color: #94a3b8;
+  }
+  
+  :global(.dark) .discovery-empty-subtitle,
+  :global([data-mode="dark"]) .discovery-empty-subtitle {
+    color: #64748b;
+  }
+</style>

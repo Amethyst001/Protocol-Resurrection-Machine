@@ -16,3 +16,5 @@ export { default as StatusBar } from './StatusBar.svelte';
 export { default as ASTViewer } from './ASTViewer.svelte';
 export { default as SplitPane } from './SplitPane.svelte';
 export { default as BottomNavigation } from './BottomNavigation.svelte';
+export { default as TopologyDiagram } from './TopologyDiagram.svelte';
+export { ModernTopology, GlassNode } from './topology';

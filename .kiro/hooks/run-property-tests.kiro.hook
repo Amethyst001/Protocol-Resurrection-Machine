@@ -1,0 +1,13 @@
+{
+  "enabled": true,
+  "name": "Run Property Tests Before Commit",
+  "description": "Runs comprehensive property-based tests (100+ iterations) before git commits to ensure correctness properties hold.",
+  "version": "1",
+  "when": {
+    "type": "userTriggered"
+  },
+  "then": {
+    "type": "runCommand",
+    "command": "npm test -- --run property"
+  }
+}

@@ -349,66 +349,72 @@ ${parseLogic}
         case 'fixed': {
           // Validate fixed string using bytes.HasPrefix
           const escapedValue = escapeDelimiter(token.value);
-          lines.push(`\t// Validate fixed string: ${JSON.stringify(token.value)}`);
-          lines.push(`\texpected := []byte("${escapedValue}")`);
-          lines.push(`\tif !bytes.HasPrefix(data[offset:], expected) {`);
-          lines.push(`\t\treturn nil, newError(fmt.Sprintf("expected '%s' at offset %d", expected, offset), offset)`);
-          lines.push(`\t}`);
-          lines.push(`\toffset += len(expected)`);
+          lines.push(`\t{`); // Start scope
+          lines.push(`\t\t// Validate fixed string: ${JSON.stringify(token.value)}`);
+          lines.push(`\t\texpected := []byte("${escapedValue}")`);
+          lines.push(`\t\tif !bytes.HasPrefix(data[offset:], expected) {`);
+          lines.push(`\t\t\treturn nil, newError(fmt.Sprintf("expected '%s' at offset %d", expected, offset), offset)`);
+          lines.push(`\t\t}`);
+          lines.push(`\t\toffset += len(expected)`);
+          lines.push(`\t}`); // End scope
           lines.push('');
           break;
         }
 
         case 'field': {
           const fieldName = toPascalCase(token.fieldName!);
-          lines.push(`\t// Extract field: ${token.fieldName}`);
+          lines.push(`\t{`); // Start scope
+          lines.push(`\t\t// Extract field: ${token.fieldName}`);
 
           if (nextToken && nextToken.type === 'fixed') {
             // Extract until next delimiter
             const escapedDelim = escapeDelimiter(nextToken.value);
-            lines.push(`\tdelimiter := []byte("${escapedDelim}")`);
-            lines.push(`\tidx := bytes.Index(data[offset:], delimiter)`);
-            lines.push(`\tif idx == -1 {`);
-            lines.push(`\t\treturn nil, newError("delimiter not found for field ${token.fieldName}", offset)`);
-            lines.push(`\t}`);
-            lines.push(`\tmsg.${fieldName} = string(data[offset:offset+idx])`);
-            lines.push(`\toffset += idx + len(delimiter)`);
+            lines.push(`\t\tdelimiter := []byte("${escapedDelim}")`);
+            lines.push(`\t\tidx := bytes.Index(data[offset:], delimiter)`);
+            lines.push(`\t\tif idx == -1 {`);
+            lines.push(`\t\t\treturn nil, newError("delimiter not found for field ${token.fieldName}", offset)`);
+            lines.push(`\t\t}`);
+            lines.push(`\t\tmsg.${fieldName} = string(data[offset:offset+idx])`);
+            lines.push(`\t\toffset += idx + len(delimiter)`);
             consumedIndices.add(i + 1); // Mark next token (delimiter) as consumed
           } else {
             // Last field or no delimiter - consume rest
-            lines.push(`\tmsg.${fieldName} = string(bytes.TrimSpace(data[offset:]))`);
-            lines.push(`\toffset = len(data)`);
+            lines.push(`\t\tmsg.${fieldName} = string(bytes.TrimSpace(data[offset:]))`);
+            lines.push(`\t\toffset = len(data)`);
           }
+          lines.push(`\t}`); // End scope
           lines.push('');
           break;
         }
 
         case 'optional': {
           const fieldName = toPascalCase(token.fieldName!);
-          lines.push(`\t// Extract optional field: ${token.fieldName}`);
+          lines.push(`\t{`); // Start scope
+          lines.push(`\t\t// Extract optional field: ${token.fieldName}`);
 
           // Check for optional prefix
           if (token.optionalPrefix) {
             const escapedPrefix = escapeDelimiter(token.optionalPrefix);
-            lines.push(`\toptPrefix := []byte("${escapedPrefix}")`);
-            lines.push(`\tif bytes.HasPrefix(data[offset:], optPrefix) {`);
-            lines.push(`\t\toffset += len(optPrefix)`);
+            lines.push(`\t\toptPrefix := []byte("${escapedPrefix}")`);
+            lines.push(`\t\tif bytes.HasPrefix(data[offset:], optPrefix) {`);
+            lines.push(`\t\t\toffset += len(optPrefix)`);
 
             if (token.optionalSuffix) {
               const escapedSuffix = escapeDelimiter(token.optionalSuffix);
-              lines.push(`\t\toptSuffix := []byte("${escapedSuffix}")`);
-              lines.push(`\t\tidx := bytes.Index(data[offset:], optSuffix)`);
-              lines.push(`\t\tif idx >= 0 {`);
-              lines.push(`\t\t\tval := string(data[offset:offset+idx])`);
-              lines.push(`\t\t\t msg.${fieldName} = &val`);
-              lines.push(`\t\t\toffset += idx + len(optSuffix)`);
-              lines.push(`\t\t}`);
+              lines.push(`\t\t\toptSuffix := []byte("${escapedSuffix}")`);
+              lines.push(`\t\t\tidx := bytes.Index(data[offset:], optSuffix)`);
+              lines.push(`\t\t\tif idx >= 0 {`);
+              lines.push(`\t\t\t\tval := string(data[offset:offset+idx])`);
+              lines.push(`\t\t\t\t msg.${fieldName} = &val`);
+              lines.push(`\t\t\t\toffset += idx + len(optSuffix)`);
+              lines.push(`\t\t\t}`);
             } else {
-              lines.push(`\t\tval := string(bytes.TrimSpace(data[offset:]))`);
-              lines.push(`\t\tmsg.${fieldName} = &val`);
+              lines.push(`\t\t\tval := string(bytes.TrimSpace(data[offset:]))`);
+              lines.push(`\t\t\tmsg.${fieldName} = &val`);
             }
-            lines.push(`\t}`);
+            lines.push(`\t\t}`);
           }
+          lines.push(`\t}`); // End scope
           lines.push('');
           break;
         }
@@ -538,10 +544,11 @@ ${serializeLogic}
    */
   private generateSerializeLogic(messageType: any): string {
     const lines: string[] = [];
-
-    // Use EnhancedFormatParser to serialize with format string
     const parser = new EnhancedFormatParser();
     const parsed = parser.parse(messageType.format);
+
+    // Create map of explicit field definitions for type lookup
+    const explicitFields = new Map(messageType.fields.map((f: any) => [f.name, f]));
 
     for (const token of parsed.tokens) {
       if (token.type === 'fixed') {
@@ -551,16 +558,70 @@ ${serializeLogic}
       } else if (token.type === 'field') {
         // Write variable field
         const fieldName = toPascalCase(token.fieldName!);
-        lines.push(`\tbuf.WriteString(msg.${fieldName})`);
+        const field = explicitFields.get(token.fieldName!) || { type: 'string' };
+        const fieldType = typeof field.type === 'object' ? field.type.kind : field.type;
+
+        lines.push(`\t// Write field: ${token.fieldName}`);
+        switch (fieldType) {
+          case 'string':
+          case 'enum':
+            lines.push(`\tbuf.WriteString(msg.${fieldName})`);
+            break;
+          case 'integer':
+          case 'int':
+            lines.push(`\tbuf.WriteString(strconv.Itoa(msg.${fieldName}))`);
+            break;
+          case 'number':
+          case 'float':
+            lines.push(`\tbuf.WriteString(strconv.FormatFloat(msg.${fieldName}, 'f', -1, 64))`);
+            break;
+          case 'boolean':
+          case 'bool':
+            lines.push(`\tbuf.WriteString(strconv.FormatBool(msg.${fieldName}))`);
+            break;
+          case 'bytes':
+            lines.push(`\tbuf.Write(msg.${fieldName})`);
+            break;
+          default:
+            lines.push(`\tbuf.WriteString(fmt.Sprintf("%v", msg.${fieldName}))`);
+        }
       } else if (token.type === 'optional') {
         // Write optional field if present
         const fieldName = toPascalCase(token.fieldName!);
+        const field = explicitFields.get(token.fieldName!) || { type: 'string' };
+        const fieldType = typeof field.type === 'object' ? field.type.kind : field.type;
+
         lines.push(`\tif msg.${fieldName} != nil {`);
         if (token.optionalPrefix) {
           const escapedPrefix = escapeDelimiter(token.optionalPrefix);
           lines.push(`\t\tbuf.WriteString("${escapedPrefix}")`);
         }
-        lines.push(`\t\tbuf.WriteString(*msg.${fieldName})`);
+
+        // Handle value serialization based on type (dereferenced)
+        switch (fieldType) {
+          case 'string':
+          case 'enum':
+            lines.push(`\t\tbuf.WriteString(*msg.${fieldName})`);
+            break;
+          case 'integer':
+          case 'int':
+            lines.push(`\t\tbuf.WriteString(strconv.Itoa(*msg.${fieldName}))`);
+            break;
+          case 'number':
+          case 'float':
+            lines.push(`\t\tbuf.WriteString(strconv.FormatFloat(*msg.${fieldName}, 'f', -1, 64))`);
+            break;
+          case 'boolean':
+          case 'bool':
+            lines.push(`\t\tbuf.WriteString(strconv.FormatBool(*msg.${fieldName}))`);
+            break;
+          case 'bytes':
+            lines.push(`\t\tbuf.Write(*msg.${fieldName})`);
+            break;
+          default:
+            lines.push(`\t\tbuf.WriteString(fmt.Sprintf("%v", *msg.${fieldName}))`);
+        }
+
         if (token.optionalSuffix) {
           const escapedSuffix = escapeDelimiter(token.optionalSuffix);
           lines.push(`\t\tbuf.WriteString("${escapedSuffix}")`);

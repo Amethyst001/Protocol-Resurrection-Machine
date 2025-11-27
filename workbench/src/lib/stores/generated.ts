@@ -5,6 +5,7 @@ export interface GeneratedCode {
 	python?: string;
 	go?: string;
 	rust?: string;
+	[key: string]: string | undefined;
 }
 
 export const generated = writable<GeneratedCode>({});

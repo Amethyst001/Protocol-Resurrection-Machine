@@ -152,8 +152,8 @@
   $: isHalloween = $currentTheme === 'halloween';
 
   $: toolbarClasses = isHalloween
-    ? 'toolbar flex items-center justify-between px-2 sm:px-3 md:px-4 py-2 sm:py-2.5 md:py-3 bg-white dark:bg-gray-900 border-b-4 border-orange-500 min-h-[56px]'
-    : 'toolbar flex items-center justify-between px-2 sm:px-3 md:px-4 py-2 sm:py-2.5 md:py-3 bg-white dark:bg-gray-900 border-b-2 border-gray-200 dark:border-gray-700 min-h-[56px]';
+    ? 'toolbar flex items-center justify-between px-2 sm:px-3 md:px-4 py-2 sm:py-2.5 md:py-3 toolbar-bg border-b-4 border-orange-500 min-h-[56px]'
+    : 'toolbar flex items-center justify-between px-2 sm:px-3 md:px-4 py-2 sm:py-2.5 md:py-3 toolbar-bg border-b-2 toolbar-border min-h-[56px]';
 </script>
 
 <div class={toolbarClasses}>
@@ -168,7 +168,7 @@
     >
       <button
         onclick={loadRandomExample}
-        class="h-11 min-h-[44px] px-1.5 sm:px-2 md:px-3 py-1 sm:py-1.5 text-xs md:text-sm bg-gray-100 dark:bg-gray-800 text-gray-700 dark:text-gray-300 rounded-md hover:bg-gray-200 dark:hover:bg-gray-700 active:bg-gray-300 dark:active:bg-gray-600 transition-colors font-medium whitespace-nowrap flex items-center justify-center touch-manipulation"
+        class="h-11 min-h-[44px] px-1.5 sm:px-2 md:px-3 py-1 sm:py-1.5 text-xs md:text-sm demo-btn rounded-md transition-colors font-medium whitespace-nowrap flex items-center justify-center touch-manipulation"
         title="Load Random Example"
       >
         Demo
@@ -288,14 +288,16 @@
              focus:outline-none focus:ring-2 focus:ring-[#00B8D9] focus:ring-offset-2
              disabled:opacity-50 disabled:cursor-not-allowed transition-all
              dark:bg-cyan-600 dark:text-white dark:hover:bg-cyan-700 active:bg-cyan-800 shadow-sm items-center justify-center touch-manipulation
-             {isHalloween ? 'bg-[#00e5ff] text-black dark:bg-[#00e5ff] dark:text-black active:bg-[#00d1e6]' : ''}"
+             {isHalloween
+        ? 'bg-[#00e5ff] text-black dark:bg-[#00e5ff] dark:text-black active:bg-[#00d1e6]'
+        : ''}"
       aria-label="Generate documentation"
       title="Generate documentation (README, API, Usage)"
     >
-      <span class="flex items-center gap-1.5 md:gap-2">
+      <span class="flex items-center gap-1 sm:gap-1.5 md:gap-2">
         {#if isGeneratingDocs}
           <svg
-            class="w-4 h-4 md:w-5 md:h-5 animate-spin"
+            class="w-3.5 h-3.5 sm:w-4 sm:h-4 md:w-5 md:h-5 animate-spin"
             fill="none"
             stroke="currentColor"
             viewBox="0 0 24 24"
@@ -308,7 +310,7 @@
             />
           </svg>
         {:else}
-          <svg class="w-4 h-4 md:w-5 md:h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <svg class="w-3.5 h-3.5 sm:w-4 sm:h-4 md:w-5 md:h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
             <path
               stroke-linecap="round"
               stroke-linejoin="round"
@@ -321,118 +323,77 @@
       </span>
     </button>
 
-    <div class="relative inline-flex shadow-sm rounded-lg">
-      <button
-        onclick={onRunPBT}
-        disabled={!canGenerate || isRunningPBT}
-        class="h-11 min-h-[44px] px-3 md:px-4 py-1.5 md:py-2 text-white rounded-l-lg font-medium text-sm
-               hover:opacity-90 hover:scale-[1.02] active:scale-95
-               focus:outline-none focus:ring-2 focus:ring-offset-2
-               disabled:opacity-50 disabled:cursor-not-allowed transition-all
-               shadow-sm flex items-center justify-center touch-manipulation
-               {isHalloween
-          ? 'bg-[#ff7518] focus:ring-[#ff7518] dark:bg-[#ff7518] dark:hover:bg-[#e66a15] active:bg-[#d66013]'
-          : 'bg-[#2DBA64] focus:ring-[#2DBA64] dark:bg-green-600 dark:hover:bg-green-700 active:bg-green-800'}"
-        aria-label="Simulate network"
-        title="Run network simulation"
-      >
-        <span class="flex items-center gap-1.5 md:gap-2">
-          {#if isRunningPBT}
-            <svg
-              class="w-4 h-4 md:w-5 md:h-5 animate-spin"
-              fill="none"
-              stroke="currentColor"
-              viewBox="0 0 24 24"
-            >
-              <path
-                stroke-linecap="round"
-                stroke-linejoin="round"
-                fill="none"
-                stroke="currentColor"
-                viewBox="0 0 24 24"
-              >
-                <path
-                  stroke-linecap="round"
-                  stroke-linejoin="round"
-                  stroke-width="2"
-                  d="M14.752 11.168l-3.197-2.132A1 1 0 0010 9.87v4.263a1 1 0 001.555.832l3.197-2.132a1 1 0 000-1.664z"
-                />
-                <path
-                  stroke-linecap="round"
-                  stroke-linejoin="round"
-                  stroke-width="2"
-                  d="M21 12a9 9 0 11-18 0 9 9 0 0118 0z"
-                />
-              </path></svg
-            >
-          {/if}
-          <span class="hidden sm:inline"
-            >{isHalloween ? "It's Alive!" /* ⚡ */ : '▶ Simulate'}</span
+    <button
+      onclick={onRunPBT}
+      disabled={!canGenerate || isRunningPBT}
+      class="h-11 min-h-[44px] px-3 md:px-4 py-1.5 md:py-2 text-white rounded-lg font-medium text-sm
+             hover:opacity-90 hover:scale-[1.02] active:scale-95
+             focus:outline-none focus:ring-2 focus:ring-offset-2
+             disabled:opacity-50 disabled:cursor-not-allowed transition-all
+             shadow-sm flex items-center justify-center touch-manipulation
+             {isHalloween
+        ? 'bg-[#ff7518] focus:ring-[#ff7518] dark:bg-[#ff7518] dark:hover:bg-[#e66a15] active:bg-[#d66013]'
+        : 'bg-[#2DBA64] focus:ring-[#2DBA64] dark:bg-green-600 dark:hover:bg-green-700 active:bg-green-800'}"
+      aria-label="Simulate network"
+      title="Run network simulation"
+    >
+      <span class="flex items-center gap-1 sm:gap-1.5 md:gap-2">
+        {#if isRunningPBT}
+          <svg
+            class="w-3.5 h-3.5 sm:w-4 sm:h-4 md:w-5 md:h-5 animate-spin"
+            fill="none"
+            stroke="currentColor"
+            viewBox="0 0 24 24"
           >
-          <span class="sm:hidden">{isHalloween ? 'Alive' /* ⚡ */ : '▶'}</span>
-        </span>
-      </button>
-      <button
-        onclick={handleRunPBT}
-        class="h-11 min-h-[44px] px-2 py-1.5 md:py-2 text-white rounded-r-lg font-medium text-sm
-               hover:opacity-90 active:scale-95
-               focus:outline-none focus:ring-2 focus:ring-offset-2
-               transition-all
-               shadow-sm flex items-center justify-center border-l border-white/20 touch-manipulation
-               {isHalloween
-          ? 'bg-[#ff7518] focus:ring-[#ff7518] dark:bg-[#ff7518] dark:hover:bg-[#e66a15] active:bg-[#d66013]'
-          : 'bg-[#2DBA64] focus:ring-[#2DBA64] dark:bg-green-600 dark:hover:bg-green-700 active:bg-green-800'}"
-        aria-label="Simulation options"
-      >
-        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-          <path
+            <path
+              stroke-linecap="round"
+              stroke-linejoin="round"
+              stroke-width="2"
+              d="M14.752 11.168l-3.197-2.132A1 1 0 0010 9.87v4.263a1 1 0 001.555.832l3.197-2.132a1 1 0 000-1.664z"
+            />
+            <path
+              stroke-linecap="round"
+              stroke-linejoin="round"
+              stroke-width="2"
+              d="M21 12a9 9 0 11-18 0 9 9 0 0118 0z"
+            />
+          </svg>
+        {:else if isHalloween}
+          <svg
+            class="w-3.5 h-3.5 sm:w-4 sm:h-4 md:w-5 md:h-5"
+            fill="none"
+            stroke="currentColor"
+            viewBox="0 0 24 24"
+            stroke-width="2"
             stroke-linecap="round"
             stroke-linejoin="round"
-            stroke-width="2"
-            d="M19 9l-7 7-7-7"
-          />
-        </svg>
-      </button>
-
-      {#if showSimulationMenu}
-        <div
-          class="absolute top-full left-0 sm:left-auto sm:right-0 mt-2 p-4 bg-white dark:bg-gray-800 rounded-lg shadow-xl border border-gray-200 dark:border-gray-700 z-50 w-[calc(100vw-2rem)] sm:w-96 max-w-lg"
-        >
-          <div class="flex items-center justify-between mb-3">
-            <div class="text-sm font-medium text-gray-700 dark:text-gray-300">Presets</div>
-          </div>
-
-          <div class="space-y-4">
-            <!-- Presets -->
-            <div class="space-y-2">
-              <div class="text-xs text-gray-600 dark:text-gray-400 mb-1">Load Preset Scenario</div>
-              <div class="grid grid-cols-1 gap-2 max-h-60 overflow-y-auto">
-                {#each PRESETS as preset}
-                  <button
-                    onclick={() => {
-                      handlePresetClick(preset.yamlFile);
-                      showSimulationMenu = false;
-                    }}
-                    class="text-left p-3 rounded-lg border-2 transition-all hover:scale-[1.02]
-                    {preset.theme === 'blue'
-                      ? 'border-blue-200 dark:border-blue-800 hover:bg-blue-50 dark:hover:bg-blue-950/30'
-                      : preset.theme === 'orange'
-                        ? 'border-orange-200 dark:border-orange-800 hover:bg-orange-50 dark:hover:bg-orange-950/30'
-                        : 'border-green-200 dark:border-green-800 hover:bg-green-50 dark:hover:bg-green-950/30'}"
-                  >
-                    <div class="flex items-center gap-2 mb-1">
-                      <span class="text-2xl">{preset.icon}</span>
-                      <span class="font-bold text-gray-900 dark:text-white">{preset.name}</span>
-                    </div>
-                    <p class="text-xs text-gray-600 dark:text-gray-400">{preset.description}</p>
-                  </button>
-                {/each}
-              </div>
-            </div>
-          </div>
-        </div>
-      {/if}
-    </div>
+          >
+            <polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2" />
+          </svg>
+        {:else}
+          <svg
+            class="w-3.5 h-3.5 sm:w-4 sm:h-4 md:w-5 md:h-5"
+            fill="none"
+            stroke="currentColor"
+            viewBox="0 0 24 24"
+          >
+            <path
+              stroke-linecap="round"
+              stroke-linejoin="round"
+              stroke-width="2"
+              d="M14.752 11.168l-3.197-2.132A1 1 0 0010 9.87v4.263a1 1 0 001.555.832l3.197-2.132a1 1 0 000-1.664z"
+            />
+            <path
+              stroke-linecap="round"
+              stroke-linejoin="round"
+              stroke-width="2"
+              d="M21 12a9 9 0 11-18 0 9 9 0 0118 0z"
+            />
+          </svg>
+        {/if}
+        <span class="hidden sm:inline">{isHalloween ? 'Awaken' : 'Simulate'}</span>
+      </span>
+    </button>
 
     <!-- Hide Discover button on mobile, show in overflow menu -->
     <div class="relative hidden sm:block">
@@ -689,13 +650,21 @@
       aria-label="Toggle dark mode"
       title="Toggle light/dark mode"
     >
-      <svg class="w-5 h-5" fill="currentColor" viewBox="0 0 24 24">
+      <!-- Sun icon for dark mode (click to switch to light) -->
+      <svg class="w-5 h-5 hidden dark:block" fill="none" stroke="currentColor" viewBox="0 0 24 24">
         <path
-          class="dark:hidden"
+          stroke-linecap="round"
+          stroke-linejoin="round"
+          stroke-width="2"
           d="M12 3v1m0 16v1m9-9h-1M4 12H3m15.364 6.364l-.707-.707M6.343 6.343l-.707-.707m12.728 0l-.707.707M6.343 17.657l-.707.707M16 12a4 4 0 11-8 0 4 4 0 018 0z"
         />
+      </svg>
+      <!-- Moon icon for light mode (click to switch to dark) -->
+      <svg class="w-5 h-5 block dark:hidden" fill="none" stroke="currentColor" viewBox="0 0 24 24">
         <path
-          class="hidden dark:block"
+          stroke-linecap="round"
+          stroke-linejoin="round"
+          stroke-width="2"
           d="M20.354 15.354A9 9 0 018.646 3.646 9.003 9.003 0 0012 21a9.003 9.003 0 008.354-5.646z"
         />
       </svg>
@@ -739,3 +708,56 @@
     tabindex="-1"
   ></button>
 {/if}
+
+
+<style>
+  /* Light Mode - Engineering Blueprint */
+  .toolbar-bg {
+    background-color: #ffffff;
+  }
+
+  .toolbar-border {
+    border-color: #e2e8f0;
+  }
+
+  .demo-btn {
+    background-color: #f1f5f9;
+    color: #334155;
+  }
+
+  .demo-btn:hover {
+    background-color: #e2e8f0;
+  }
+
+  .demo-btn:active {
+    background-color: #cbd5e1;
+  }
+
+  /* Dark Mode */
+  :global(.dark) .toolbar-bg,
+  :global([data-mode='dark']) .toolbar-bg {
+    background-color: #0f172a;
+  }
+
+  :global(.dark) .toolbar-border,
+  :global([data-mode='dark']) .toolbar-border {
+    border-color: #334155;
+  }
+
+  :global(.dark) .demo-btn,
+  :global([data-mode='dark']) .demo-btn {
+    background-color: #1e293b;
+    color: #94a3b8;
+  }
+
+  :global(.dark) .demo-btn:hover,
+  :global([data-mode='dark']) .demo-btn:hover {
+    background-color: #334155;
+    color: #e2e8f0;
+  }
+
+  :global(.dark) .demo-btn:active,
+  :global([data-mode='dark']) .demo-btn:active {
+    background-color: #475569;
+  }
+</style>

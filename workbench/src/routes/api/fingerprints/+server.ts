@@ -18,19 +18,25 @@ function getFingerprintDatabase(): FingerprintDatabase {
     const parser = new YAMLParser();
 
     try {
-        // Load protocol specs from static/presets directory
-        const protocolsDir = join(process.cwd(), 'static', 'presets');
-        if (existsSync(protocolsDir)) {
-            const files = readdirSync(protocolsDir).filter(f => f.endsWith('.yaml'));
+        // Load protocol specs from multiple directories
+        const protocolDirs = [
+            join(process.cwd(), 'static', 'presets'),      // Workbench presets
+            join(process.cwd(), '..', 'protocols'),         // Main protocols folder
+        ];
 
-            for (const file of files) {
-                try {
-                    const yamlContent = readFileSync(join(protocolsDir, file), 'utf-8');
-                    const spec = parser.parse(yamlContent);
-                    const fingerprint = generateFingerprint(spec);
-                    fingerprintDb.add(fingerprint);
-                } catch (error) {
-                    console.warn(`Failed to load fingerprint from ${file}:`, error);
+        for (const protocolsDir of protocolDirs) {
+            if (existsSync(protocolsDir)) {
+                const files = readdirSync(protocolsDir).filter(f => f.endsWith('.yaml'));
+
+                for (const file of files) {
+                    try {
+                        const yamlContent = readFileSync(join(protocolsDir, file), 'utf-8');
+                        const spec = parser.parse(yamlContent);
+                        const fingerprint = generateFingerprint(spec);
+                        fingerprintDb.add(fingerprint);
+                    } catch (error) {
+                        console.warn(`Failed to load fingerprint from ${file}:`, error);
+                    }
                 }
             }
         }

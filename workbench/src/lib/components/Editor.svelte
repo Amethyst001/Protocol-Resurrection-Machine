@@ -4,6 +4,8 @@
   import { EditorState, type Extension } from '@codemirror/state';
   import { yaml } from '@codemirror/lang-yaml';
   import { oneDark } from '@codemirror/theme-one-dark';
+  import { HighlightStyle, syntaxHighlighting } from '@codemirror/language';
+  import { tags } from '@lezer/highlight';
   import { lintGutter, linter, type Diagnostic as CMDiagnostic } from '@codemirror/lint';
   import {
     autocompletion,
@@ -14,6 +16,117 @@
   import { theme } from '$lib/stores/theme';
   import { isMobile } from '$lib/stores/layout';
   import { debounce } from '$lib/utils/debounce';
+
+  // Light theme for CodeMirror - Engineering Blueprint style
+  const lightTheme = EditorView.theme({
+    '&': {
+      backgroundColor: '#ffffff',
+      color: '#0f172a',
+    },
+    '.cm-content': {
+      caretColor: '#2563eb',
+    },
+    '.cm-cursor, .cm-dropCursor': {
+      borderLeftColor: '#2563eb',
+    },
+    '&.cm-focused .cm-selectionBackground, .cm-selectionBackground, .cm-content ::selection': {
+      backgroundColor: '#dbeafe',
+    },
+    '.cm-panels': {
+      backgroundColor: '#f8fafc',
+      color: '#0f172a',
+    },
+    '.cm-panels.cm-panels-top': {
+      borderBottom: '1px solid #e2e8f0',
+    },
+    '.cm-panels.cm-panels-bottom': {
+      borderTop: '1px solid #e2e8f0',
+    },
+    '.cm-searchMatch': {
+      backgroundColor: '#fef08a',
+      outline: '1px solid #facc15',
+    },
+    '.cm-searchMatch.cm-searchMatch-selected': {
+      backgroundColor: '#fde047',
+    },
+    '.cm-activeLine': {
+      backgroundColor: '#f1f5f9',
+    },
+    '.cm-selectionMatch': {
+      backgroundColor: '#dbeafe',
+    },
+    '&.cm-focused .cm-matchingBracket, &.cm-focused .cm-nonmatchingBracket': {
+      backgroundColor: '#dbeafe',
+      outline: '1px solid #93c5fd',
+    },
+    '.cm-gutters': {
+      backgroundColor: '#f8fafc',
+      color: '#94a3b8',
+      border: 'none',
+      borderRight: '1px solid #e2e8f0',
+    },
+    '.cm-activeLineGutter': {
+      backgroundColor: '#e2e8f0',
+      color: '#475569',
+    },
+    '.cm-foldPlaceholder': {
+      backgroundColor: '#e2e8f0',
+      border: 'none',
+      color: '#64748b',
+    },
+    '.cm-tooltip': {
+      border: '1px solid #e2e8f0',
+      backgroundColor: '#ffffff',
+      boxShadow: '0 4px 6px -1px rgba(0, 0, 0, 0.1)',
+    },
+    '.cm-tooltip .cm-tooltip-arrow:before': {
+      borderTopColor: '#e2e8f0',
+      borderBottomColor: '#e2e8f0',
+    },
+    '.cm-tooltip .cm-tooltip-arrow:after': {
+      borderTopColor: '#ffffff',
+      borderBottomColor: '#ffffff',
+    },
+    '.cm-tooltip-autocomplete': {
+      '& > ul > li[aria-selected]': {
+        backgroundColor: '#dbeafe',
+        color: '#0f172a',
+      },
+    },
+  }, { dark: false });
+
+  // Light syntax highlighting
+  const lightHighlightStyle = HighlightStyle.define([
+    { tag: tags.keyword, color: '#7c3aed' },
+    { tag: tags.operator, color: '#0f172a' },
+    { tag: tags.special(tags.variableName), color: '#0369a1' },
+    { tag: tags.typeName, color: '#0891b2' },
+    { tag: tags.atom, color: '#7c3aed' },
+    { tag: tags.number, color: '#c2410c' },
+    { tag: tags.definition(tags.variableName), color: '#0369a1' },
+    { tag: tags.string, color: '#15803d' },
+    { tag: tags.special(tags.string), color: '#15803d' },
+    { tag: tags.comment, color: '#64748b', fontStyle: 'italic' },
+    { tag: tags.variableName, color: '#0f172a' },
+    { tag: tags.tagName, color: '#0891b2' },
+    { tag: tags.bracket, color: '#64748b' },
+    { tag: tags.meta, color: '#7c3aed' },
+    { tag: tags.link, color: '#2563eb', textDecoration: 'underline' },
+    { tag: tags.heading, fontWeight: 'bold', color: '#0f172a' },
+    { tag: tags.emphasis, fontStyle: 'italic' },
+    { tag: tags.strong, fontWeight: 'bold' },
+    { tag: tags.strikethrough, textDecoration: 'line-through' },
+    { tag: tags.className, color: '#0891b2' },
+    { tag: tags.propertyName, color: '#0369a1' },
+    { tag: tags.labelName, color: '#7c3aed' },
+    { tag: tags.namespace, color: '#0891b2' },
+    { tag: tags.macroName, color: '#7c3aed' },
+    { tag: tags.literal, color: '#c2410c' },
+    { tag: tags.inserted, color: '#15803d' },
+    { tag: tags.deleted, color: '#dc2626' },
+    { tag: tags.changed, color: '#d97706' },
+    { tag: tags.invalid, color: '#dc2626' },
+  ]);
 
   export let value: string = '';
   export let diagnostics: Array<{
@@ -204,13 +317,64 @@
     // Add theme based on initial value
     if (currentTheme === 'dark') {
       extensions.push(oneDark);
+    } else {
+      extensions.push(lightTheme);
+      extensions.push(syntaxHighlighting(lightHighlightStyle));
     }
 
-    // Subscribe to theme changes (note: theme changes require editor recreation in CodeMirror 6)
+    // Subscribe to theme changes and recreate editor when theme changes
     const unsubscribe = theme.subscribe((t) => {
+      if (currentTheme !== t && editorView) {
+        currentTheme = t;
+        // Recreate editor with new theme
+        const currentDoc = editorView.state.doc.toString();
+        editorView.destroy();
+        
+        const newExtensions: Extension[] = [
+          basicSetup,
+          yaml(),
+          lintGutter(),
+          customLintSource,
+          autocompletion({
+            override: [yamlAutocomplete],
+            activateOnTyping: true,
+          }),
+          hoverTooltip(hoverDocumentation),
+          EditorView.updateListener.of((update) => {
+            if (update.docChanged) {
+              const newValue = update.state.doc.toString();
+              onchange(newValue);
+              debouncedValidate(newValue);
+            }
+          }),
+        ];
+        
+        if ($isMobile) {
+          newExtensions.push(
+            EditorView.editorAttributes.of({
+              class: 'mobile-editor-view'
+            })
+          );
+        }
+        
+        if (t === 'dark') {
+          newExtensions.push(oneDark);
+        } else {
+          newExtensions.push(lightTheme);
+          newExtensions.push(syntaxHighlighting(lightHighlightStyle));
+        }
+        
+        const newState = EditorState.create({
+          doc: currentDoc,
+          extensions: newExtensions,
+        });
+        
+        editorView = new EditorView({
+          state: newState,
+          parent: editorElement,
+        });
+      }
       currentTheme = t;
-      // Theme changes would require recreating the editor view
-      // For now, we'll just track the current theme
     });
 
     const startState = EditorState.create({
@@ -279,10 +443,93 @@
     height: calc(100vh - 60px);
   }
 
+  /* Light Mode - Engineering Blueprint */
   :global(.cm-editor) {
     height: 100%;
     font-size: 14px;
     background: #ffffff;
+  }
+  
+  :global(.cm-scroller) {
+    overflow: auto;
+  }
+
+  :global(.cm-gutters) {
+    background: #f8fafc;
+    border-right: 1px solid #e2e8f0;
+    color: #94a3b8;
+  }
+
+  :global(.cm-lineNumbers .cm-gutterElement) {
+    color: #94a3b8;
+  }
+
+  :global(.cm-activeLine) {
+    background: #f1f5f9;
+    border-radius: 0.25rem;
+  }
+
+  :global(.cm-activeLineGutter) {
+    background: #e2e8f0;
+    color: #475569;
+  }
+
+  :global(.cm-tooltip-hover) {
+    background-color: #ffffff;
+    color: #0f172a;
+    border: 1px solid #e2e8f0;
+    border-radius: 4px;
+    padding: 4px 8px;
+    font-size: 12px;
+    box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
+  }
+
+  :global(.cm-diagnostic-error) {
+    border-left: 3px solid #dc2626;
+  }
+
+  :global(.cm-diagnostic-warning) {
+    border-left: 3px solid #ca8a04;
+  }
+
+  :global(.cm-diagnostic-info) {
+    border-left: 3px solid #2563eb;
+  }
+
+  /* Dark Mode */
+  :global(.dark .cm-editor),
+  :global([data-mode='dark'] .cm-editor) {
+    background: #0f172a;
+  }
+
+  :global(.dark .cm-gutters),
+  :global([data-mode='dark'] .cm-gutters) {
+    background: #1e293b;
+    border-right-color: #334155;
+    color: #64748b;
+  }
+
+  :global(.dark .cm-lineNumbers .cm-gutterElement),
+  :global([data-mode='dark'] .cm-lineNumbers .cm-gutterElement) {
+    color: #64748b;
+  }
+
+  :global(.dark .cm-activeLine),
+  :global([data-mode='dark'] .cm-activeLine) {
+    background: #1e293b;
+  }
+
+  :global(.dark .cm-activeLineGutter),
+  :global([data-mode='dark'] .cm-activeLineGutter) {
+    background: #334155;
+    color: #94a3b8;
+  }
+
+  :global(.dark .cm-tooltip-hover),
+  :global([data-mode='dark'] .cm-tooltip-hover) {
+    background-color: #1e293b;
+    color: #e2e8f0;
+    border-color: #334155;
   }
   
   /* Mobile: larger font for readability */
@@ -304,69 +551,5 @@
   /* Mobile: adjust gutters */
   :global(.mobile-editor .cm-gutters) {
     min-width: 0;
-  }
-
-  :global(.dark .cm-editor) {
-    background: #0f172a;
-  }
-
-  :global(.cm-scroller) {
-    overflow: auto;
-  }
-
-  :global(.cm-gutters) {
-    background: #f9fafb;
-    border-right: 1px solid #e5e7eb;
-  }
-
-  :global(.dark .cm-gutters) {
-    background: #1f2937;
-    border-right-color: #374151;
-  }
-
-  :global(.cm-activeLine) {
-    background: #f3f4f6;
-    border-radius: 0.25rem;
-  }
-
-  :global(.dark .cm-activeLine) {
-    background: #374151;
-    border-radius: 0.25rem;
-  }
-
-  :global(.cm-activeLineGutter) {
-    background: #e5e7eb;
-  }
-
-  :global(.dark .cm-activeLineGutter) {
-    background: #4b5563;
-  }
-
-  :global(.cm-tooltip-hover) {
-    background-color: white;
-    color: #1f2937;
-    border: 1px solid #d1d5db;
-    border-radius: 4px;
-    padding: 4px 8px;
-    font-size: 12px;
-    box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
-  }
-
-  :global(.dark .cm-tooltip-hover) {
-    background-color: #1f2937;
-    color: #e5e7eb;
-    border-color: #4b5563;
-  }
-
-  :global(.cm-diagnostic-error) {
-    border-left: 3px solid #ef4444;
-  }
-
-  :global(.cm-diagnostic-warning) {
-    border-left: 3px solid #f59e0b;
-  }
-
-  :global(.cm-diagnostic-info) {
-    border-left: 3px solid #3b82f6;
   }
 </style>
